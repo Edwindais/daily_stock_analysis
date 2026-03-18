@@ -1348,6 +1348,24 @@ class SearchService:
     NEWS_OVERSAMPLE_FACTOR = 2
     NEWS_OVERSAMPLE_MAX = 10
     FUTURE_TOLERANCE_DAYS = 1
+    QUOTE_PAGE_DOMAINS = (
+        "quote.eastmoney.com",
+        "data.eastmoney.com",
+        "q.stock.sohu.com",
+        "stock.quote.stockstar.com",
+    )
+    QUOTE_PAGE_KEYWORDS = (
+        "股票价格",
+        "走势图",
+        "行情中心",
+        "实时行情",
+        "分时",
+    )
+    NOISE_REPORT_KEYWORDS = (
+        "市场现状调研及发展前景分析报告",
+        "行业市场现状调研及发展前景分析报告",
+        "全球及中国",
+    )
     
     def __init__(
         self,
@@ -1671,6 +1689,58 @@ class SearchService:
 
         return None
 
+    @staticmethod
+    def _normalize_stock_alias(value: str) -> str:
+        normalized = re.sub(r"[\s\(\)（）\[\]\-_/]", "", str(value or "").upper())
+        return normalized
+
+    @classmethod
+    def _build_stock_aliases(cls, stock_code: str, stock_name: str) -> List[str]:
+        aliases: List[str] = []
+
+        def _add_alias(value: str) -> None:
+            normalized = cls._normalize_stock_alias(value)
+            if normalized and normalized not in aliases:
+                aliases.append(normalized)
+
+        _add_alias(stock_code)
+        _add_alias(stock_name)
+        stripped_name = re.sub(r"^\*?ST", "", stock_name or "", flags=re.IGNORECASE).strip()
+        if stripped_name and stripped_name != stock_name:
+            _add_alias(stripped_name)
+            _add_alias(f"ST{stripped_name}")
+            _add_alias(f"*ST{stripped_name}")
+        return aliases
+
+    @classmethod
+    def _result_mentions_stock(cls, item: SearchResult, stock_code: str, stock_name: str) -> bool:
+        aliases = cls._build_stock_aliases(stock_code, stock_name)
+        haystack = cls._normalize_stock_alias(" ".join([
+            item.title or "",
+            item.snippet or "",
+            item.url or "",
+            item.source or "",
+        ]))
+        if not haystack:
+            return False
+        return any(alias in haystack for alias in aliases)
+
+    @classmethod
+    def _is_noise_result(cls, item: SearchResult) -> bool:
+        title = str(item.title or "")
+        snippet = str(item.snippet or "")
+        url = str(item.url or "")
+        source = str(item.source or "")
+        lowered_blob = " ".join([title, snippet, url, source]).lower()
+
+        if any(domain in lowered_blob for domain in cls.QUOTE_PAGE_DOMAINS):
+            return True
+        if any(keyword in title for keyword in cls.QUOTE_PAGE_KEYWORDS):
+            return True
+        if any(keyword in title or keyword in snippet for keyword in cls.NOISE_REPORT_KEYWORDS):
+            return True
+        return False
+
     def _filter_news_response(
         self,
         response: SearchResponse,
@@ -1678,6 +1748,8 @@ class SearchService:
         search_days: int,
         max_results: int,
         log_scope: str,
+        stock_code: Optional[str] = None,
+        stock_name: Optional[str] = None,
     ) -> SearchResponse:
         """Hard-filter results by published_date recency and normalize date strings."""
         if not response.success or not response.results:
@@ -1691,6 +1763,8 @@ class SearchService:
         dropped_unknown = 0
         dropped_old = 0
         dropped_future = 0
+        dropped_noise = 0
+        dropped_irrelevant = 0
 
         for item in response.results:
             published = self._normalize_news_publish_date(item.published_date)
@@ -1702,6 +1776,12 @@ class SearchService:
                 continue
             if published > latest:
                 dropped_future += 1
+                continue
+            if self._is_noise_result(item):
+                dropped_noise += 1
+                continue
+            if stock_code and stock_name and not self._result_mentions_stock(item, stock_code, stock_name):
+                dropped_irrelevant += 1
                 continue
 
             filtered.append(
@@ -1716,9 +1796,9 @@ class SearchService:
             if len(filtered) >= max_results:
                 break
 
-        if dropped_unknown or dropped_old or dropped_future:
+        if dropped_unknown or dropped_old or dropped_future or dropped_noise or dropped_irrelevant:
             logger.info(
-                "[新闻过滤] %s: provider=%s, total=%s, kept=%s, drop_unknown=%s, drop_old=%s, drop_future=%s, window=[%s,%s]",
+                "[新闻过滤] %s: provider=%s, total=%s, kept=%s, drop_unknown=%s, drop_old=%s, drop_future=%s, drop_noise=%s, drop_irrelevant=%s, window=[%s,%s]",
                 log_scope,
                 response.provider,
                 len(response.results),
@@ -1726,6 +1806,8 @@ class SearchService:
                 dropped_unknown,
                 dropped_old,
                 dropped_future,
+                dropped_noise,
+                dropped_irrelevant,
                 earliest.isoformat(),
                 latest.isoformat(),
             )
@@ -1809,6 +1891,8 @@ class SearchService:
                 search_days=search_days,
                 max_results=max_results,
                 log_scope=f"{stock_code}:{provider.name}:stock_news",
+                stock_code=stock_code,
+                stock_name=stock_name,
             )
             had_provider_success = had_provider_success or bool(response.success)
 
@@ -2004,6 +2088,8 @@ class SearchService:
                 search_days=search_days,
                 max_results=target_per_dimension,
                 log_scope=f"{stock_code}:{provider.name}:{dim['name']}",
+                stock_code=stock_code,
+                stock_name=stock_name,
             )
             results[dim['name']] = filtered_response
             search_count += 1

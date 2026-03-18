@@ -296,12 +296,12 @@ class SystemConfigService:
         current_map = self._manager.read_config_map()
 
         if submitted_keys & {"NEWS_MAX_AGE_DAYS", "NEWS_STRATEGY_PROFILE"}:
-            raw_profile = current_map.get("NEWS_STRATEGY_PROFILE", "short")
+            raw_profile = current_map.get("NEWS_STRATEGY_PROFILE", "medium")
             profile = normalize_news_strategy_profile(raw_profile)
             try:
-                max_age = max(1, int(current_map.get("NEWS_MAX_AGE_DAYS", "3") or "3"))
+                max_age = max(1, int(current_map.get("NEWS_MAX_AGE_DAYS", "7") or "7"))
             except (TypeError, ValueError):
-                max_age = 3
+                max_age = 7
             effective_days = resolve_news_window_days(
                 news_max_age_days=max_age,
                 news_strategy_profile=profile,

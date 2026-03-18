@@ -1,0 +1,950 @@
+2026-03-18 00:27:24 | INFO     | src/logging_config.py:153 | 日志系统初始化完成，日志目录: logs
+2026-03-18 00:27:24 | INFO     | src/logging_config.py:154 | 常规日志: logs/stock_analysis_20260318.log
+2026-03-18 00:27:24 | INFO     | src/logging_config.py:155 | 调试日志: logs/stock_analysis_debug_20260318.log
+2026-03-18 00:27:24 | INFO     | main.py:526 | ============================================================
+2026-03-18 00:27:24 | INFO     | main.py:527 | A股自选股智能分析系统 启动
+2026-03-18 00:27:24 | INFO     | main.py:528 | 运行时间: 2026-03-18 00:27:24
+2026-03-18 00:27:24 | INFO     | main.py:529 | ============================================================
+2026-03-18 00:27:24 | WARNING  | main.py:534 | 未配置 Tushare Token，将使用其他数据源
+2026-03-18 00:27:25 | INFO     | src/storage.py:675 | 数据库初始化完成: sqlite:////home/runner/work/daily_stock_analysis/daily_stock_analysis/data/stock_analysis.db
+2026-03-18 00:27:25 | WARNING  | data_provider/tushare_fetcher.py:124 | Tushare Token 未配置，此数据源不可用
+2026-03-18 00:27:25 | INFO     | data_provider/base.py:706 | 已初始化 6 个数据源（按优先级）: EfinanceFetcher(P0), AkshareFetcher(P1), TushareFetcher(P2), PytdxFetcher(P2), BaostockFetcher(P3), YfinanceFetcher(P4)
+2026-03-18 00:27:25 | INFO     | src/analyzer.py:764 | Analyzer LLM: litellm initialized (model=gemini/gemini-3-flash-preview)
+2026-03-18 00:27:25 | INFO     | src/notification.py:159 | 已配置 1 个通知渠道：邮件
+2026-03-18 00:27:25 | INFO     | src/search_service.py:1398 | 已配置 Bocha 搜索，共 1 个 API Key
+2026-03-18 00:27:25 | INFO     | src/search_service.py:1403 | 已配置 Tavily 搜索，共 1 个 API Key
+2026-03-18 00:27:25 | INFO     | src/search_service.py:1432 | 新闻时效策略已启用: profile=short, profile_days=3, NEWS_MAX_AGE_DAYS=3, effective_window=3
+2026-03-18 00:27:25 | INFO     | src/core/pipeline.py:97 | 调度器初始化完成，最大并发数: 1
+2026-03-18 00:27:25 | INFO     | src/core/pipeline.py:98 | 已启用趋势分析器 (MA5>MA10>MA20 多头判断)
+2026-03-18 00:27:25 | INFO     | src/core/pipeline.py:101 | 实时行情已启用 (优先级: tencent,akshare_sina,efinance,akshare_em)
+2026-03-18 00:27:25 | INFO     | src/core/pipeline.py:107 | 筹码分布分析已禁用
+2026-03-18 00:27:25 | INFO     | src/core/pipeline.py:109 | 搜索服务已启用 (Tavily/SerpAPI)
+2026-03-18 00:27:25 | INFO     | src/core/pipeline.py:1120 | ===== 开始分析 7 只股票 =====
+2026-03-18 00:27:25 | INFO     | src/core/pipeline.py:1121 | 股票列表: 002214, 002611, 300984, 300638, 002436, 600089, 001203
+2026-03-18 00:27:25 | INFO     | src/core/pipeline.py:1122 | 并发数: 1, 模式: 完整分析
+2026-03-18 00:27:25 | INFO     | data_provider/base.py:884 | [预取] 当前优先级使用轻量级数据源(sina/tencent)，无需预取
+2026-03-18 00:27:25 | WARNING  | data_provider/tushare_fetcher.py:487 | Tushare API 未初始化，无法获取股票名称
+2026-03-18 00:28:01 | WARNING  | data_provider/pytdx_fetcher.py:403 | Pytdx 获取股票名称失败 002214: Pytdx 无法连接任何服务器
+2026-03-18 00:28:05 | INFO     | data_provider/base.py:1233 | [股票名称] 从 BaostockFetcher 获取: 002214 -> *ST大立
+2026-03-18 00:28:05 | WARNING  | data_provider/tushare_fetcher.py:487 | Tushare API 未初始化，无法获取股票名称
+2026-03-18 00:28:41 | WARNING  | data_provider/pytdx_fetcher.py:403 | Pytdx 获取股票名称失败 002611: Pytdx 无法连接任何服务器
+2026-03-18 00:28:42 | INFO     | data_provider/base.py:1233 | [股票名称] 从 BaostockFetcher 获取: 002611 -> 东方精工
+2026-03-18 00:28:42 | WARNING  | data_provider/tushare_fetcher.py:487 | Tushare API 未初始化，无法获取股票名称
+2026-03-18 00:29:17 | WARNING  | data_provider/pytdx_fetcher.py:403 | Pytdx 获取股票名称失败 300984: Pytdx 无法连接任何服务器
+2026-03-18 00:29:19 | INFO     | data_provider/base.py:1233 | [股票名称] 从 BaostockFetcher 获取: 300984 -> 金沃股份
+2026-03-18 00:29:19 | WARNING  | data_provider/tushare_fetcher.py:487 | Tushare API 未初始化，无法获取股票名称
+2026-03-18 00:29:55 | WARNING  | data_provider/pytdx_fetcher.py:403 | Pytdx 获取股票名称失败 300638: Pytdx 无法连接任何服务器
+2026-03-18 00:29:57 | INFO     | data_provider/base.py:1233 | [股票名称] 从 BaostockFetcher 获取: 300638 -> 广和通
+2026-03-18 00:29:57 | WARNING  | data_provider/tushare_fetcher.py:487 | Tushare API 未初始化，无法获取股票名称
+2026-03-18 00:30:32 | WARNING  | data_provider/pytdx_fetcher.py:403 | Pytdx 获取股票名称失败 002436: Pytdx 无法连接任何服务器
+2026-03-18 00:30:37 | INFO     | data_provider/base.py:1233 | [股票名称] 从 BaostockFetcher 获取: 002436 -> 兴森科技
+2026-03-18 00:30:37 | WARNING  | data_provider/tushare_fetcher.py:487 | Tushare API 未初始化，无法获取股票名称
+2026-03-18 00:31:12 | WARNING  | data_provider/pytdx_fetcher.py:403 | Pytdx 获取股票名称失败 600089: Pytdx 无法连接任何服务器
+2026-03-18 00:31:13 | INFO     | data_provider/base.py:1233 | [股票名称] 从 BaostockFetcher 获取: 600089 -> 特变电工
+2026-03-18 00:31:13 | WARNING  | data_provider/tushare_fetcher.py:487 | Tushare API 未初始化，无法获取股票名称
+2026-03-18 00:31:49 | WARNING  | data_provider/pytdx_fetcher.py:403 | Pytdx 获取股票名称失败 001203: Pytdx 无法连接任何服务器
+2026-03-18 00:31:49 | WARNING  | data_provider/baostock_fetcher.py:165 | 无法确定股票 001203 的市场，默认使用深市
+2026-03-18 00:31:53 | INFO     | data_provider/base.py:1233 | [股票名称] 从 BaostockFetcher 获取: 001203 -> 大中矿业
+2026-03-18 00:31:53 | INFO     | src/core/pipeline.py:1027 | ========== 开始处理 002214 ==========
+2026-03-18 00:31:53 | INFO     | src/core/pipeline.py:158 | *ST大立(002214) 开始从数据源获取数据...
+2026-03-18 00:31:53 | INFO     | data_provider/base.py:790 | [数据源尝试 1/6] [EfinanceFetcher] 获取 002214...
+2026-03-18 00:31:53 | INFO     | data_provider/base.py:357 | [EfinanceFetcher] 开始获取 002214 日线数据: 范围=2026-01-17 ~ 2026-03-18
+2026-03-18 00:31:56 | INFO     | data_provider/efinance_fetcher.py:389 | [API调用] ef.stock.get_quote_history(stock_codes=002214, beg=20260117, end=20260318, klt=101, fqt=1)
+2026-03-18 00:31:57 | INFO     | data_provider/efinance_fetcher.py:411 | [API返回] Eastmoney 历史K线成功: endpoint=push2his.eastmoney.com/api/qt/stock/kline/get, stock_code=002214, range=20260117~20260318, rows=36, elapsed=1.69s
+2026-03-18 00:31:57 | INFO     | data_provider/efinance_fetcher.py:416 | [API返回] 列名: ['股票名称', '股票代码', '日期', '开盘', '收盘', '最高', '最低', '成交量', '成交额', '振幅', '涨跌幅', '涨跌额', '换手率']
+2026-03-18 00:31:57 | INFO     | data_provider/efinance_fetcher.py:418 | [API返回] 日期范围: 2026-01-19 ~ 2026-03-17
+2026-03-18 00:31:57 | INFO     | data_provider/base.py:376 | [EfinanceFetcher] 002214 获取成功: 范围=2026-01-17 ~ 2026-03-18, rows=36, elapsed=4.63s
+2026-03-18 00:31:57 | INFO     | data_provider/base.py:800 | [数据源完成] 002214 使用 [EfinanceFetcher] 获取成功: rows=36, elapsed=4.63s
+2026-03-18 00:31:57 | INFO     | src/storage.py:1387 | 保存 002214 数据成功，新增 36 条
+2026-03-18 00:31:57 | INFO     | src/core/pipeline.py:166 | *ST大立(002214) 数据保存成功（来源: EfinanceFetcher，新增 36 条）
+2026-03-18 00:31:57 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 002214 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz002214
+2026-03-18 00:32:02 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 002214 *ST大立: endpoint=qt.gtimg.cn/q, 价格=17.98, 涨跌=-1.15%, 量比=0.86, 换手率=0.48%, elapsed=4.86s
+2026-03-18 00:32:02 | INFO     | data_provider/base.py:1054 | [实时行情] 002214 成功获取 (来源: tencent)
+2026-03-18 00:32:02 | INFO     | src/core/pipeline.py:210 | *ST大立(002214) 实时行情: 价格=17.98, 量比=0.86, 换手率=0.48% (来源: tencent)
+2026-03-18 00:32:02 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 002214 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz002214
+2026-03-18 00:32:04 | INFO     | src/core/pipeline.py:284 | *ST大立(002214) 趋势分析: 弱势空头, 买入信号=观望, 评分=35
+2026-03-18 00:32:04 | INFO     | src/core/pipeline.py:305 | *ST大立(002214) 开始多维度情报搜索...
+2026-03-18 00:32:04 | INFO     | src/search_service.py:1966 | 开始多维度情报搜索: *ST大立(002214), 时间范围: 近3天 (profile=short, NEWS_MAX_AGE_DAYS=3), 目标条数=3, provider请求条数=6
+2026-03-18 00:32:04 | INFO     | src/search_service.py:1995 | [情报搜索] 最新消息: 使用 Bocha
+2026-03-18 00:32:05 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='*ST大立 002214 最新 新闻 重大 事件'
+2026-03-18 00:32:05 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 5 条结果
+2026-03-18 00:32:05 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '*ST大立 002214 最新 新闻 重大 事件' 成功，返回 5 条结果，耗时 1.56s
+2026-03-18 00:32:05 | INFO     | src/search_service.py:1720 | [新闻过滤] 002214:Bocha:latest_news: provider=Bocha, total=5, kept=1, drop_unknown=0, drop_old=4, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:32:05 | INFO     | src/search_service.py:2012 | [情报搜索] 最新消息: 原始=5条, 过滤后=1条
+2026-03-18 00:32:06 | INFO     | src/search_service.py:1995 | [情报搜索] 机构分析: 使用 Tavily
+2026-03-18 00:32:06 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 002214 *ST大立: endpoint=qt.gtimg.cn/q, 价格=17.98, 涨跌=-1.15%, 量比=0.86, 换手率=0.48%, elapsed=4.05s
+2026-03-18 00:32:06 | INFO     | data_provider/base.py:1054 | [实时行情] 002214 成功获取 (来源: tencent)
+2026-03-18 00:32:09 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='*ST大立 研报 目标价 评级 深度分析', 返回 6 条结果
+2026-03-18 00:32:09 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '*ST大立 研报 目标价 评级 深度分析' 成功，返回 6 条结果，耗时 3.44s
+2026-03-18 00:32:09 | INFO     | src/search_service.py:1720 | [新闻过滤] 002214:Tavily:market_analysis: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:32:09 | INFO     | src/search_service.py:2012 | [情报搜索] 机构分析: 原始=6条, 过滤后=0条
+2026-03-18 00:32:10 | INFO     | src/search_service.py:1995 | [情报搜索] 风险排查: 使用 Bocha
+2026-03-18 00:32:11 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='*ST大立 减持 处罚 违规 诉讼 利空 风险'
+2026-03-18 00:32:11 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:32:11 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '*ST大立 减持 处罚 违规 诉讼 利空 风险' 成功，返回 6 条结果，耗时 1.09s
+2026-03-18 00:32:11 | INFO     | src/search_service.py:1720 | [新闻过滤] 002214:Bocha:risk_check: provider=Bocha, total=6, kept=3, drop_unknown=0, drop_old=3, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:32:11 | INFO     | src/search_service.py:2012 | [情报搜索] 风险排查: 原始=6条, 过滤后=3条
+2026-03-18 00:32:11 | INFO     | src/search_service.py:1995 | [情报搜索] 业绩预期: 使用 Tavily
+2026-03-18 00:32:16 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='*ST大立 业绩预告 财报 营收 净利润 同比增长', 返回 6 条结果
+2026-03-18 00:32:16 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '*ST大立 业绩预告 财报 营收 净利润 同比增长' 成功，返回 6 条结果，耗时 4.10s
+2026-03-18 00:32:16 | INFO     | src/search_service.py:1720 | [新闻过滤] 002214:Tavily:earnings: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:32:16 | INFO     | src/search_service.py:2012 | [情报搜索] 业绩预期: 原始=6条, 过滤后=0条
+2026-03-18 00:32:16 | INFO     | src/search_service.py:1995 | [情报搜索] 行业分析: 使用 Bocha
+2026-03-18 00:32:17 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='*ST大立 所在行业 竞争对手 市场份额 行业前景'
+2026-03-18 00:32:17 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:32:17 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '*ST大立 所在行业 竞争对手 市场份额 行业前景' 成功，返回 6 条结果，耗时 0.98s
+2026-03-18 00:32:17 | INFO     | src/search_service.py:1720 | [新闻过滤] 002214:Bocha:industry: provider=Bocha, total=6, kept=2, drop_unknown=0, drop_old=4, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:32:17 | INFO     | src/search_service.py:2012 | [情报搜索] 行业分析: 原始=6条, 过滤后=2条
+2026-03-18 00:32:18 | INFO     | src/core/pipeline.py:320 | *ST大立(002214) 情报搜索完成: 共 6 条结果
+2026-03-18 00:32:18 | INFO     | src/storage.py:922 | 保存新闻情报成功: 002214, 新增 1 条
+2026-03-18 00:32:18 | INFO     | src/storage.py:922 | 保存新闻情报成功: 002214, 新增 3 条
+2026-03-18 00:32:18 | INFO     | src/storage.py:922 | 保存新闻情报成功: 002214, 新增 0 条
+2026-03-18 00:32:21 | INFO     | src/analyzer.py:952 | ========== AI 分析 *ST大立(002214) ==========
+2026-03-18 00:32:21 | INFO     | src/analyzer.py:953 | [LLM配置] 模型: gemini/gemini-3-flash-preview
+2026-03-18 00:32:21 | INFO     | src/analyzer.py:954 | [LLM配置] Prompt 长度: 3769 字符
+2026-03-18 00:32:21 | INFO     | src/analyzer.py:955 | [LLM配置] 是否包含新闻: 是
+2026-03-18 00:32:21 | INFO     | src/analyzer.py:959 | [LLM Prompt 预览]
+# 决策仪表盘分析请求
+
+## 📊 股票基础信息
+| 项目 | 数据 |
+|------|------|
+| 股票代码 | **002214** |
+| 股票名称 | ***ST大立** |
+| 分析日期 | 2026-03-18 |
+
+---
+
+## 📈 技术面数据
+
+### 今日行情
+| 指标 | 数值 |
+|------|------|
+| 收盘价 | 17.98 元 |
+| 开盘价 | 18.32 元 |
+| 最高价 | 18.32 元 |
+| 最低价 | 17.85 元 |
+| 涨跌幅 | -1.15% |
+| 成交量 | 231.16 万股 |
+| 成交额 | 4166.70 万元 |
+
+### 均线系统（关键判断指标）
+| 均线 | 数值 | 说明 |
+|------|------|------|
+| MA5 | 18.072 | 短期趋势线 |
+| MA10 | 18.084 | 中短期趋势线 |
+| MA20 | 18.0405 | 中期趋势线 |
+| 均线形态 | 短期走弱 🔽 | 多头/空头/缠绕 |
+
+### 实时行情增强数据
+| 指标 | 数值 | 解读 |
+...
+2026-03-18 00:32:21 | INFO     | src/analyzer.py:968 | [LLM调用] 开始调用 gemini/gemini-3-flash-preview...
+2026-03-18 00:32:21 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:3932 | 
+LiteLLM completion() model= gemini-3-flash-preview; provider = gemini
+2026-03-18 00:32:21 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/llms/vertex_ai/gemini/vertex_and_google_ai_studio_gemini.py:1007 | Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-3-flash-preview) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+2026-03-18 00:32:36 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:1656 | Wrapper: Completed Call, calling success_handler
+2026-03-18 00:32:36 | INFO     | src/analyzer.py:981 | [LLM返回] gemini/gemini-3-flash-preview 响应成功, 耗时 15.50s, 响应长度 3968 字符
+2026-03-18 00:32:36 | INFO     | src/analyzer.py:985 | [LLM返回 预览]
+```json
+{
+    "stock_name": "大立科技（002214）",
+    "sentiment_score": 35,
+    "trend_prediction": "看空",
+    "operation_advice": "观望",
+    "decision_type": "sell",
+    "confidence_level": "高",
+
+    "dashboard": {
+        "core_conclusion": {
+            "one_sentence": "均线死叉且属于*ST高风险股，趋势走弱，严禁入场，持仓者宜逢高减仓...
+2026-03-18 00:32:36 | INFO     | src/analyzer.py:1025 | [LLM解析] *ST大立(002214) 分析完成: 看空, 评分 35
+2026-03-18 00:32:36 | INFO     | src/core/pipeline.py:1051 | [002214] 分析完成: 观望, 评分 35
+2026-03-18 00:32:36 | INFO     | src/core/pipeline.py:1027 | ========== 开始处理 002611 ==========
+2026-03-18 00:32:36 | INFO     | src/core/pipeline.py:158 | 东方精工(002611) 开始从数据源获取数据...
+2026-03-18 00:32:36 | INFO     | data_provider/base.py:790 | [数据源尝试 1/6] [EfinanceFetcher] 获取 002611...
+2026-03-18 00:32:36 | INFO     | data_provider/base.py:357 | [EfinanceFetcher] 开始获取 002611 日线数据: 范围=2026-01-17 ~ 2026-03-18
+2026-03-18 00:32:38 | INFO     | data_provider/efinance_fetcher.py:389 | [API调用] ef.stock.get_quote_history(stock_codes=002611, beg=20260117, end=20260318, klt=101, fqt=1)
+2026-03-18 00:32:39 | INFO     | data_provider/efinance_fetcher.py:411 | [API返回] Eastmoney 历史K线成功: endpoint=push2his.eastmoney.com/api/qt/stock/kline/get, stock_code=002611, range=20260117~20260318, rows=36, elapsed=0.81s
+2026-03-18 00:32:39 | INFO     | data_provider/efinance_fetcher.py:416 | [API返回] 列名: ['股票名称', '股票代码', '日期', '开盘', '收盘', '最高', '最低', '成交量', '成交额', '振幅', '涨跌幅', '涨跌额', '换手率']
+2026-03-18 00:32:39 | INFO     | data_provider/efinance_fetcher.py:418 | [API返回] 日期范围: 2026-01-19 ~ 2026-03-17
+2026-03-18 00:32:39 | INFO     | data_provider/base.py:376 | [EfinanceFetcher] 002611 获取成功: 范围=2026-01-17 ~ 2026-03-18, rows=36, elapsed=2.45s
+2026-03-18 00:32:39 | INFO     | data_provider/base.py:800 | [数据源完成] 002611 使用 [EfinanceFetcher] 获取成功: rows=36, elapsed=2.45s
+2026-03-18 00:32:39 | INFO     | src/storage.py:1387 | 保存 002611 数据成功，新增 36 条
+2026-03-18 00:32:39 | INFO     | src/core/pipeline.py:166 | 东方精工(002611) 数据保存成功（来源: EfinanceFetcher，新增 36 条）
+2026-03-18 00:32:39 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 002611 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz002611
+2026-03-18 00:32:41 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 002611 东方精工: endpoint=qt.gtimg.cn/q, 价格=16.81, 涨跌=-0.59%, 量比=0.8, 换手率=1.83%, elapsed=2.92s
+2026-03-18 00:32:41 | INFO     | data_provider/base.py:1054 | [实时行情] 002611 成功获取 (来源: tencent)
+2026-03-18 00:32:41 | INFO     | src/core/pipeline.py:210 | 东方精工(002611) 实时行情: 价格=16.81, 量比=0.8, 换手率=1.83% (来源: tencent)
+2026-03-18 00:32:41 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 002611 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz002611
+2026-03-18 00:32:43 | INFO     | src/core/pipeline.py:284 | 东方精工(002611) 趋势分析: 弱势多头, 买入信号=观望, 评分=43
+2026-03-18 00:32:43 | INFO     | src/core/pipeline.py:305 | 东方精工(002611) 开始多维度情报搜索...
+2026-03-18 00:32:43 | INFO     | src/search_service.py:1966 | 开始多维度情报搜索: 东方精工(002611), 时间范围: 近3天 (profile=short, NEWS_MAX_AGE_DAYS=3), 目标条数=3, provider请求条数=6
+2026-03-18 00:32:43 | INFO     | src/search_service.py:1995 | [情报搜索] 最新消息: 使用 Bocha
+2026-03-18 00:32:44 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='东方精工 002611 最新 新闻 重大 事件'
+2026-03-18 00:32:44 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:32:44 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '东方精工 002611 最新 新闻 重大 事件' 成功，返回 6 条结果，耗时 1.27s
+2026-03-18 00:32:44 | INFO     | src/search_service.py:1720 | [新闻过滤] 002611:Bocha:latest_news: provider=Bocha, total=6, kept=1, drop_unknown=0, drop_old=5, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:32:44 | INFO     | src/search_service.py:2012 | [情报搜索] 最新消息: 原始=6条, 过滤后=1条
+2026-03-18 00:32:45 | INFO     | src/search_service.py:1995 | [情报搜索] 机构分析: 使用 Tavily
+2026-03-18 00:32:46 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='东方精工 研报 目标价 评级 深度分析', 返回 6 条结果
+2026-03-18 00:32:46 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '东方精工 研报 目标价 评级 深度分析' 成功，返回 6 条结果，耗时 1.67s
+2026-03-18 00:32:46 | INFO     | src/search_service.py:1720 | [新闻过滤] 002611:Tavily:market_analysis: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:32:46 | INFO     | src/search_service.py:2012 | [情报搜索] 机构分析: 原始=6条, 过滤后=0条
+2026-03-18 00:32:47 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 002611 东方精工: endpoint=qt.gtimg.cn/q, 价格=16.81, 涨跌=-0.59%, 量比=0.8, 换手率=1.83%, elapsed=5.09s
+2026-03-18 00:32:47 | INFO     | data_provider/base.py:1054 | [实时行情] 002611 成功获取 (来源: tencent)
+2026-03-18 00:32:47 | INFO     | src/search_service.py:1995 | [情报搜索] 风险排查: 使用 Bocha
+2026-03-18 00:32:48 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='东方精工 减持 处罚 违规 诉讼 利空 风险'
+2026-03-18 00:32:48 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:32:48 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '东方精工 减持 处罚 违规 诉讼 利空 风险' 成功，返回 6 条结果，耗时 1.19s
+2026-03-18 00:32:48 | INFO     | src/search_service.py:1720 | [新闻过滤] 002611:Bocha:risk_check: provider=Bocha, total=6, kept=3, drop_unknown=0, drop_old=2, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:32:48 | INFO     | src/search_service.py:2012 | [情报搜索] 风险排查: 原始=6条, 过滤后=3条
+2026-03-18 00:32:49 | INFO     | src/search_service.py:1995 | [情报搜索] 业绩预期: 使用 Tavily
+2026-03-18 00:32:53 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='东方精工 业绩预告 财报 营收 净利润 同比增长', 返回 6 条结果
+2026-03-18 00:32:53 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '东方精工 业绩预告 财报 营收 净利润 同比增长' 成功，返回 6 条结果，耗时 3.92s
+2026-03-18 00:32:53 | INFO     | src/search_service.py:1720 | [新闻过滤] 002611:Tavily:earnings: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:32:53 | INFO     | src/search_service.py:2012 | [情报搜索] 业绩预期: 原始=6条, 过滤后=0条
+2026-03-18 00:32:53 | INFO     | src/search_service.py:1995 | [情报搜索] 行业分析: 使用 Bocha
+2026-03-18 00:32:54 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='东方精工 所在行业 竞争对手 市场份额 行业前景'
+2026-03-18 00:32:54 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:32:54 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '东方精工 所在行业 竞争对手 市场份额 行业前景' 成功，返回 6 条结果，耗时 1.04s
+2026-03-18 00:32:54 | INFO     | src/search_service.py:1720 | [新闻过滤] 002611:Bocha:industry: provider=Bocha, total=6, kept=1, drop_unknown=0, drop_old=5, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:32:54 | INFO     | src/search_service.py:2012 | [情报搜索] 行业分析: 原始=6条, 过滤后=1条
+2026-03-18 00:32:55 | INFO     | src/core/pipeline.py:320 | 东方精工(002611) 情报搜索完成: 共 5 条结果
+2026-03-18 00:32:55 | INFO     | src/storage.py:922 | 保存新闻情报成功: 002611, 新增 1 条
+2026-03-18 00:32:55 | INFO     | src/storage.py:922 | 保存新闻情报成功: 002611, 新增 3 条
+2026-03-18 00:32:55 | INFO     | src/storage.py:922 | 保存新闻情报成功: 002611, 新增 0 条
+2026-03-18 00:32:58 | INFO     | src/analyzer.py:952 | ========== AI 分析 东方精工(002611) ==========
+2026-03-18 00:32:58 | INFO     | src/analyzer.py:953 | [LLM配置] 模型: gemini/gemini-3-flash-preview
+2026-03-18 00:32:58 | INFO     | src/analyzer.py:954 | [LLM配置] Prompt 长度: 3559 字符
+2026-03-18 00:32:58 | INFO     | src/analyzer.py:955 | [LLM配置] 是否包含新闻: 是
+2026-03-18 00:32:58 | INFO     | src/analyzer.py:959 | [LLM Prompt 预览]
+# 决策仪表盘分析请求
+
+## 📊 股票基础信息
+| 项目 | 数据 |
+|------|------|
+| 股票代码 | **002611** |
+| 股票名称 | **东方精工** |
+| 分析日期 | 2026-03-18 |
+
+---
+
+## 📈 技术面数据
+
+### 今日行情
+| 指标 | 数值 |
+|------|------|
+| 收盘价 | 16.81 元 |
+| 开盘价 | 16.95 元 |
+| 最高价 | 17.14 元 |
+| 最低价 | 16.78 元 |
+| 涨跌幅 | -0.59% |
+| 成交量 | 1837.14 万股 |
+| 成交额 | 3.11 亿元 |
+
+### 均线系统（关键判断指标）
+| 均线 | 数值 | 说明 |
+|------|------|------|
+| MA5 | 16.954 | 短期趋势线 |
+| MA10 | 16.915 | 中短期趋势线 |
+| MA20 | 17.2815 | 中期趋势线 |
+| 均线形态 | 震荡整理 ↔️ | 多头/空头/缠绕 |
+
+### 实时行情增强数据
+| 指标 | 数值 | 解读 |
+|-...
+2026-03-18 00:32:58 | INFO     | src/analyzer.py:968 | [LLM调用] 开始调用 gemini/gemini-3-flash-preview...
+2026-03-18 00:32:58 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:3932 | 
+LiteLLM completion() model= gemini-3-flash-preview; provider = gemini
+2026-03-18 00:32:58 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/llms/vertex_ai/gemini/vertex_and_google_ai_studio_gemini.py:1007 | Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-3-flash-preview) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+2026-03-18 00:33:14 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:1656 | Wrapper: Completed Call, calling success_handler
+2026-03-18 00:33:14 | INFO     | src/analyzer.py:981 | [LLM返回] gemini/gemini-3-flash-preview 响应成功, 耗时 16.75s, 响应长度 3999 字符
+2026-03-18 00:33:14 | INFO     | src/analyzer.py:985 | [LLM返回 预览]
+```json
+{
+    "stock_name": "东方精工（002611）",
+    "sentiment_score": 45,
+    "trend_prediction": "震荡",
+    "operation_advice": "观望",
+    "decision_type": "hold",
+    "confidence_level": "中",
+
+    "dashboard": {
+        "core_conclusion": {
+            "one_sentence": "均线系统未形成多头排列，受阻于MA20压制，建议场外耐心等待趋势确...
+2026-03-18 00:33:14 | INFO     | src/analyzer.py:1025 | [LLM解析] 东方精工(002611) 分析完成: 震荡, 评分 45
+2026-03-18 00:33:14 | INFO     | src/core/pipeline.py:1051 | [002611] 分析完成: 观望, 评分 45
+2026-03-18 00:33:14 | INFO     | src/core/pipeline.py:1027 | ========== 开始处理 300984 ==========
+2026-03-18 00:33:14 | INFO     | src/core/pipeline.py:158 | 金沃股份(300984) 开始从数据源获取数据...
+2026-03-18 00:33:14 | INFO     | data_provider/base.py:790 | [数据源尝试 1/6] [EfinanceFetcher] 获取 300984...
+2026-03-18 00:33:14 | INFO     | data_provider/base.py:357 | [EfinanceFetcher] 开始获取 300984 日线数据: 范围=2026-01-17 ~ 2026-03-18
+2026-03-18 00:33:16 | INFO     | data_provider/efinance_fetcher.py:389 | [API调用] ef.stock.get_quote_history(stock_codes=300984, beg=20260117, end=20260318, klt=101, fqt=1)
+2026-03-18 00:33:17 | INFO     | data_provider/efinance_fetcher.py:411 | [API返回] Eastmoney 历史K线成功: endpoint=push2his.eastmoney.com/api/qt/stock/kline/get, stock_code=300984, range=20260117~20260318, rows=36, elapsed=0.98s
+2026-03-18 00:33:17 | INFO     | data_provider/efinance_fetcher.py:416 | [API返回] 列名: ['股票名称', '股票代码', '日期', '开盘', '收盘', '最高', '最低', '成交量', '成交额', '振幅', '涨跌幅', '涨跌额', '换手率']
+2026-03-18 00:33:17 | INFO     | data_provider/efinance_fetcher.py:418 | [API返回] 日期范围: 2026-01-19 ~ 2026-03-17
+2026-03-18 00:33:17 | INFO     | data_provider/base.py:376 | [EfinanceFetcher] 300984 获取成功: 范围=2026-01-17 ~ 2026-03-18, rows=36, elapsed=2.98s
+2026-03-18 00:33:17 | INFO     | data_provider/base.py:800 | [数据源完成] 300984 使用 [EfinanceFetcher] 获取成功: rows=36, elapsed=2.98s
+2026-03-18 00:33:17 | INFO     | src/storage.py:1387 | 保存 300984 数据成功，新增 36 条
+2026-03-18 00:33:17 | INFO     | src/core/pipeline.py:166 | 金沃股份(300984) 数据保存成功（来源: EfinanceFetcher，新增 36 条）
+2026-03-18 00:33:17 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 300984 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz300984
+2026-03-18 00:33:20 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 300984 金沃股份: endpoint=qt.gtimg.cn/q, 价格=59.39, 涨跌=-3.71%, 量比=0.88, 换手率=1.93%, elapsed=2.32s
+2026-03-18 00:33:20 | INFO     | data_provider/base.py:1054 | [实时行情] 300984 成功获取 (来源: tencent)
+2026-03-18 00:33:20 | INFO     | src/core/pipeline.py:210 | 金沃股份(300984) 实时行情: 价格=59.39, 量比=0.88, 换手率=1.93% (来源: tencent)
+2026-03-18 00:33:20 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 300984 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz300984
+2026-03-18 00:33:21 | INFO     | src/core/pipeline.py:284 | 金沃股份(300984) 趋势分析: 空头排列, 买入信号=观望, 评分=36
+2026-03-18 00:33:21 | INFO     | src/core/pipeline.py:305 | 金沃股份(300984) 开始多维度情报搜索...
+2026-03-18 00:33:21 | INFO     | src/search_service.py:1966 | 开始多维度情报搜索: 金沃股份(300984), 时间范围: 近3天 (profile=short, NEWS_MAX_AGE_DAYS=3), 目标条数=3, provider请求条数=6
+2026-03-18 00:33:21 | INFO     | src/search_service.py:1995 | [情报搜索] 最新消息: 使用 Bocha
+2026-03-18 00:33:22 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='金沃股份 300984 最新 新闻 重大 事件'
+2026-03-18 00:33:22 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:33:22 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '金沃股份 300984 最新 新闻 重大 事件' 成功，返回 6 条结果，耗时 1.00s
+2026-03-18 00:33:22 | INFO     | src/search_service.py:1720 | [新闻过滤] 300984:Bocha:latest_news: provider=Bocha, total=6, kept=3, drop_unknown=0, drop_old=1, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:33:22 | INFO     | src/search_service.py:2012 | [情报搜索] 最新消息: 原始=6条, 过滤后=3条
+2026-03-18 00:33:23 | INFO     | src/search_service.py:1995 | [情报搜索] 机构分析: 使用 Tavily
+2026-03-18 00:33:25 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='金沃股份 研报 目标价 评级 深度分析', 返回 6 条结果
+2026-03-18 00:33:25 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '金沃股份 研报 目标价 评级 深度分析' 成功，返回 6 条结果，耗时 2.00s
+2026-03-18 00:33:25 | INFO     | src/search_service.py:1720 | [新闻过滤] 300984:Tavily:market_analysis: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:33:25 | INFO     | src/search_service.py:2012 | [情报搜索] 机构分析: 原始=6条, 过滤后=0条
+2026-03-18 00:33:25 | INFO     | src/search_service.py:1995 | [情报搜索] 风险排查: 使用 Bocha
+2026-03-18 00:33:26 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='金沃股份 减持 处罚 违规 诉讼 利空 风险'
+2026-03-18 00:33:26 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:33:26 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '金沃股份 减持 处罚 违规 诉讼 利空 风险' 成功，返回 6 条结果，耗时 1.03s
+2026-03-18 00:33:26 | INFO     | src/search_service.py:1720 | [新闻过滤] 300984:Bocha:risk_check: provider=Bocha, total=6, kept=0, drop_unknown=0, drop_old=6, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:33:26 | INFO     | src/search_service.py:2012 | [情报搜索] 风险排查: 原始=6条, 过滤后=0条
+2026-03-18 00:33:26 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 300984 金沃股份: endpoint=qt.gtimg.cn/q, 价格=59.39, 涨跌=-3.71%, 量比=0.88, 换手率=1.93%, elapsed=6.75s
+2026-03-18 00:33:26 | INFO     | data_provider/base.py:1054 | [实时行情] 300984 成功获取 (来源: tencent)
+2026-03-18 00:33:27 | INFO     | src/search_service.py:1995 | [情报搜索] 业绩预期: 使用 Tavily
+2026-03-18 00:33:30 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='金沃股份 业绩预告 财报 营收 净利润 同比增长', 返回 6 条结果
+2026-03-18 00:33:30 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '金沃股份 业绩预告 财报 营收 净利润 同比增长' 成功，返回 6 条结果，耗时 3.55s
+2026-03-18 00:33:30 | INFO     | src/search_service.py:1720 | [新闻过滤] 300984:Tavily:earnings: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:33:30 | INFO     | src/search_service.py:2012 | [情报搜索] 业绩预期: 原始=6条, 过滤后=0条
+2026-03-18 00:33:31 | INFO     | src/search_service.py:1995 | [情报搜索] 行业分析: 使用 Bocha
+2026-03-18 00:33:32 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='金沃股份 所在行业 竞争对手 市场份额 行业前景'
+2026-03-18 00:33:32 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:33:32 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '金沃股份 所在行业 竞争对手 市场份额 行业前景' 成功，返回 6 条结果，耗时 1.16s
+2026-03-18 00:33:32 | INFO     | src/search_service.py:1720 | [新闻过滤] 300984:Bocha:industry: provider=Bocha, total=6, kept=1, drop_unknown=0, drop_old=5, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:33:32 | INFO     | src/search_service.py:2012 | [情报搜索] 行业分析: 原始=6条, 过滤后=1条
+2026-03-18 00:33:32 | INFO     | src/core/pipeline.py:320 | 金沃股份(300984) 情报搜索完成: 共 4 条结果
+2026-03-18 00:33:32 | INFO     | src/storage.py:922 | 保存新闻情报成功: 300984, 新增 3 条
+2026-03-18 00:33:32 | INFO     | src/storage.py:922 | 保存新闻情报成功: 300984, 新增 0 条
+2026-03-18 00:33:35 | INFO     | src/analyzer.py:952 | ========== AI 分析 金沃股份(300984) ==========
+2026-03-18 00:33:35 | INFO     | src/analyzer.py:953 | [LLM配置] 模型: gemini/gemini-3-flash-preview
+2026-03-18 00:33:35 | INFO     | src/analyzer.py:954 | [LLM配置] Prompt 长度: 3440 字符
+2026-03-18 00:33:35 | INFO     | src/analyzer.py:955 | [LLM配置] 是否包含新闻: 是
+2026-03-18 00:33:35 | INFO     | src/analyzer.py:959 | [LLM Prompt 预览]
+# 决策仪表盘分析请求
+
+## 📊 股票基础信息
+| 项目 | 数据 |
+|------|------|
+| 股票代码 | **300984** |
+| 股票名称 | **金沃股份** |
+| 分析日期 | 2026-03-18 |
+
+---
+
+## 📈 技术面数据
+
+### 今日行情
+| 指标 | 数值 |
+|------|------|
+| 收盘价 | 59.39 元 |
+| 开盘价 | 62.25 元 |
+| 最高价 | 62.25 元 |
+| 最低价 | 59.0 元 |
+| 涨跌幅 | -3.71% |
+| 成交量 | 170.96 万股 |
+| 成交额 | 1.04 亿元 |
+
+### 均线系统（关键判断指标）
+| 均线 | 数值 | 说明 |
+|------|------|------|
+| MA5 | 60.658 | 短期趋势线 |
+| MA10 | 61.842999999999996 | 中短期趋势线 |
+| MA20 | 65.959 | 中期趋势线 |
+| 均线形态 | 空头排列 📉 | 多头/空头/缠绕 |
+
+### 实时行情增强数据
+| 指标 | 数值 |...
+2026-03-18 00:33:35 | INFO     | src/analyzer.py:968 | [LLM调用] 开始调用 gemini/gemini-3-flash-preview...
+2026-03-18 00:33:35 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:3932 | 
+LiteLLM completion() model= gemini-3-flash-preview; provider = gemini
+2026-03-18 00:33:35 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/llms/vertex_ai/gemini/vertex_and_google_ai_studio_gemini.py:1007 | Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-3-flash-preview) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+2026-03-18 00:33:50 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:1656 | Wrapper: Completed Call, calling success_handler
+2026-03-18 00:33:50 | INFO     | src/analyzer.py:981 | [LLM返回] gemini/gemini-3-flash-preview 响应成功, 耗时 14.23s, 响应长度 3918 字符
+2026-03-18 00:33:50 | INFO     | src/analyzer.py:985 | [LLM返回 预览]
+```json
+{
+    "stock_name": "金沃股份（300984）",
+    "sentiment_score": 32,
+    "trend_prediction": "看空",
+    "operation_advice": "观望",
+    "decision_type": "sell",
+    "confidence_level": "高",
+
+    "dashboard": {
+        "core_conclusion": {
+            "one_sentence": "均线空头排列且估值极高，股价放量跌破支撑，暂无止跌迹象，坚决不参与...
+2026-03-18 00:33:50 | INFO     | src/analyzer.py:1025 | [LLM解析] 金沃股份(300984) 分析完成: 看空, 评分 32
+2026-03-18 00:33:50 | INFO     | src/core/pipeline.py:1051 | [300984] 分析完成: 观望, 评分 32
+2026-03-18 00:33:50 | INFO     | src/core/pipeline.py:1027 | ========== 开始处理 300638 ==========
+2026-03-18 00:33:50 | INFO     | src/core/pipeline.py:158 | 广和通(300638) 开始从数据源获取数据...
+2026-03-18 00:33:50 | INFO     | data_provider/base.py:790 | [数据源尝试 1/6] [EfinanceFetcher] 获取 300638...
+2026-03-18 00:33:50 | INFO     | data_provider/base.py:357 | [EfinanceFetcher] 开始获取 300638 日线数据: 范围=2026-01-17 ~ 2026-03-18
+2026-03-18 00:33:51 | INFO     | data_provider/efinance_fetcher.py:389 | [API调用] ef.stock.get_quote_history(stock_codes=300638, beg=20260117, end=20260318, klt=101, fqt=1)
+2026-03-18 00:33:52 | INFO     | data_provider/efinance_fetcher.py:411 | [API返回] Eastmoney 历史K线成功: endpoint=push2his.eastmoney.com/api/qt/stock/kline/get, stock_code=300638, range=20260117~20260318, rows=36, elapsed=0.81s
+2026-03-18 00:33:52 | INFO     | data_provider/efinance_fetcher.py:416 | [API返回] 列名: ['股票名称', '股票代码', '日期', '开盘', '收盘', '最高', '最低', '成交量', '成交额', '振幅', '涨跌幅', '涨跌额', '换手率']
+2026-03-18 00:33:52 | INFO     | data_provider/efinance_fetcher.py:418 | [API返回] 日期范围: 2026-01-19 ~ 2026-03-17
+2026-03-18 00:33:52 | INFO     | data_provider/base.py:376 | [EfinanceFetcher] 300638 获取成功: 范围=2026-01-17 ~ 2026-03-18, rows=36, elapsed=2.46s
+2026-03-18 00:33:52 | INFO     | data_provider/base.py:800 | [数据源完成] 300638 使用 [EfinanceFetcher] 获取成功: rows=36, elapsed=2.46s
+2026-03-18 00:33:52 | INFO     | src/storage.py:1387 | 保存 300638 数据成功，新增 36 条
+2026-03-18 00:33:52 | INFO     | src/core/pipeline.py:166 | 广和通(300638) 数据保存成功（来源: EfinanceFetcher，新增 36 条）
+2026-03-18 00:33:52 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 300638 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz300638
+2026-03-18 00:33:56 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 300638 广和通: endpoint=qt.gtimg.cn/q, 价格=26.84, 涨跌=-2.04%, 量比=1.23, 换手率=3.06%, elapsed=3.76s
+2026-03-18 00:33:56 | INFO     | data_provider/base.py:1054 | [实时行情] 300638 成功获取 (来源: tencent)
+2026-03-18 00:33:56 | INFO     | src/core/pipeline.py:210 | 广和通(300638) 实时行情: 价格=26.84, 量比=1.23, 换手率=3.06% (来源: tencent)
+2026-03-18 00:33:56 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 300638 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz300638
+2026-03-18 00:33:57 | INFO     | src/core/pipeline.py:284 | 广和通(300638) 趋势分析: 空头排列, 买入信号=观望, 评分=36
+2026-03-18 00:33:57 | INFO     | src/core/pipeline.py:305 | 广和通(300638) 开始多维度情报搜索...
+2026-03-18 00:33:57 | INFO     | src/search_service.py:1966 | 开始多维度情报搜索: 广和通(300638), 时间范围: 近3天 (profile=short, NEWS_MAX_AGE_DAYS=3), 目标条数=3, provider请求条数=6
+2026-03-18 00:33:57 | INFO     | src/search_service.py:1995 | [情报搜索] 最新消息: 使用 Bocha
+2026-03-18 00:33:59 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='广和通 300638 最新 新闻 重大 事件'
+2026-03-18 00:33:59 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:33:59 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '广和通 300638 最新 新闻 重大 事件' 成功，返回 6 条结果，耗时 1.28s
+2026-03-18 00:33:59 | INFO     | src/search_service.py:1720 | [新闻过滤] 300638:Bocha:latest_news: provider=Bocha, total=6, kept=1, drop_unknown=0, drop_old=5, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:33:59 | INFO     | src/search_service.py:2012 | [情报搜索] 最新消息: 原始=6条, 过滤后=1条
+2026-03-18 00:33:59 | INFO     | src/search_service.py:1995 | [情报搜索] 机构分析: 使用 Tavily
+2026-03-18 00:34:01 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='广和通 研报 目标价 评级 深度分析', 返回 6 条结果
+2026-03-18 00:34:01 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '广和通 研报 目标价 评级 深度分析' 成功，返回 6 条结果，耗时 2.01s
+2026-03-18 00:34:01 | INFO     | src/search_service.py:1720 | [新闻过滤] 300638:Tavily:market_analysis: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:34:01 | INFO     | src/search_service.py:2012 | [情报搜索] 机构分析: 原始=6条, 过滤后=0条
+2026-03-18 00:34:02 | INFO     | src/search_service.py:1995 | [情报搜索] 风险排查: 使用 Bocha
+2026-03-18 00:34:02 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 300638 广和通: endpoint=qt.gtimg.cn/q, 价格=26.84, 涨跌=-2.04%, 量比=1.23, 换手率=3.06%, elapsed=5.88s
+2026-03-18 00:34:02 | INFO     | data_provider/base.py:1054 | [实时行情] 300638 成功获取 (来源: tencent)
+2026-03-18 00:34:03 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='广和通 减持 处罚 违规 诉讼 利空 风险'
+2026-03-18 00:34:03 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:34:03 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '广和通 减持 处罚 违规 诉讼 利空 风险' 成功，返回 6 条结果，耗时 1.03s
+2026-03-18 00:34:03 | INFO     | src/search_service.py:1720 | [新闻过滤] 300638:Bocha:risk_check: provider=Bocha, total=6, kept=1, drop_unknown=0, drop_old=5, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:34:03 | INFO     | src/search_service.py:2012 | [情报搜索] 风险排查: 原始=6条, 过滤后=1条
+2026-03-18 00:34:03 | INFO     | src/search_service.py:1995 | [情报搜索] 业绩预期: 使用 Tavily
+2026-03-18 00:34:05 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='广和通 业绩预告 财报 营收 净利润 同比增长', 返回 6 条结果
+2026-03-18 00:34:05 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '广和通 业绩预告 财报 营收 净利润 同比增长' 成功，返回 6 条结果，耗时 1.98s
+2026-03-18 00:34:05 | INFO     | src/search_service.py:1720 | [新闻过滤] 300638:Tavily:earnings: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:34:05 | INFO     | src/search_service.py:2012 | [情报搜索] 业绩预期: 原始=6条, 过滤后=0条
+2026-03-18 00:34:06 | INFO     | src/search_service.py:1995 | [情报搜索] 行业分析: 使用 Bocha
+2026-03-18 00:34:07 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='广和通 所在行业 竞争对手 市场份额 行业前景'
+2026-03-18 00:34:07 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:34:07 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '广和通 所在行业 竞争对手 市场份额 行业前景' 成功，返回 6 条结果，耗时 0.99s
+2026-03-18 00:34:07 | INFO     | src/search_service.py:1720 | [新闻过滤] 300638:Bocha:industry: provider=Bocha, total=6, kept=2, drop_unknown=0, drop_old=4, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:34:07 | INFO     | src/search_service.py:2012 | [情报搜索] 行业分析: 原始=6条, 过滤后=2条
+2026-03-18 00:34:07 | INFO     | src/core/pipeline.py:320 | 广和通(300638) 情报搜索完成: 共 4 条结果
+2026-03-18 00:34:07 | INFO     | src/storage.py:922 | 保存新闻情报成功: 300638, 新增 1 条
+2026-03-18 00:34:07 | INFO     | src/storage.py:922 | 保存新闻情报成功: 300638, 新增 1 条
+2026-03-18 00:34:07 | INFO     | src/storage.py:922 | 保存新闻情报成功: 300638, 新增 2 条
+2026-03-18 00:34:10 | INFO     | src/analyzer.py:952 | ========== AI 分析 广和通(300638) ==========
+2026-03-18 00:34:10 | INFO     | src/analyzer.py:953 | [LLM配置] 模型: gemini/gemini-3-flash-preview
+2026-03-18 00:34:10 | INFO     | src/analyzer.py:954 | [LLM配置] Prompt 长度: 3261 字符
+2026-03-18 00:34:10 | INFO     | src/analyzer.py:955 | [LLM配置] 是否包含新闻: 是
+2026-03-18 00:34:10 | INFO     | src/analyzer.py:959 | [LLM Prompt 预览]
+# 决策仪表盘分析请求
+
+## 📊 股票基础信息
+| 项目 | 数据 |
+|------|------|
+| 股票代码 | **300638** |
+| 股票名称 | **广和通** |
+| 分析日期 | 2026-03-18 |
+
+---
+
+## 📈 技术面数据
+
+### 今日行情
+| 指标 | 数值 |
+|------|------|
+| 收盘价 | 26.84 元 |
+| 开盘价 | 27.45 元 |
+| 最高价 | 27.88 元 |
+| 最低价 | 26.8 元 |
+| 涨跌幅 | -2.04% |
+| 成交量 | 1623.09 万股 |
+| 成交额 | 4.44 亿元 |
+
+### 均线系统（关键判断指标）
+| 均线 | 数值 | 说明 |
+|------|------|------|
+| MA5 | 27.096000000000004 | 短期趋势线 |
+| MA10 | 27.185000000000002 | 中短期趋势线 |
+| MA20 | 28.296 | 中期趋势线 |
+| 均线形态 | 空头排列 📉 | 多头/空头/缠绕 |
+
+### 实时行情增强数据...
+2026-03-18 00:34:10 | INFO     | src/analyzer.py:968 | [LLM调用] 开始调用 gemini/gemini-3-flash-preview...
+2026-03-18 00:34:10 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:3932 | 
+LiteLLM completion() model= gemini-3-flash-preview; provider = gemini
+2026-03-18 00:34:10 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/llms/vertex_ai/gemini/vertex_and_google_ai_studio_gemini.py:1007 | Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-3-flash-preview) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+2026-03-18 00:34:27 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:1656 | Wrapper: Completed Call, calling success_handler
+2026-03-18 00:34:27 | INFO     | src/analyzer.py:981 | [LLM返回] gemini/gemini-3-flash-preview 响应成功, 耗时 16.49s, 响应长度 3952 字符
+2026-03-18 00:34:27 | INFO     | src/analyzer.py:985 | [LLM返回 预览]
+```json
+{
+    "stock_name": "广和通（300638）",
+    "sentiment_score": 36,
+    "trend_prediction": "看空",
+    "operation_advice": "观望/减仓",
+    "decision_type": "sell",
+    "confidence_level": "高",
+
+    "dashboard": {
+        "core_conclusion": {
+            "one_sentence": "均线标准空头排列，放量跌破支撑，趋势走坏，坚决不接飞刀。",
+...
+2026-03-18 00:34:27 | INFO     | src/analyzer.py:1025 | [LLM解析] 广和通(300638) 分析完成: 看空, 评分 36
+2026-03-18 00:34:27 | INFO     | src/core/pipeline.py:1051 | [300638] 分析完成: 观望/减仓, 评分 36
+2026-03-18 00:34:27 | INFO     | src/core/pipeline.py:1027 | ========== 开始处理 002436 ==========
+2026-03-18 00:34:27 | INFO     | src/core/pipeline.py:158 | 兴森科技(002436) 开始从数据源获取数据...
+2026-03-18 00:34:27 | INFO     | data_provider/base.py:790 | [数据源尝试 1/6] [EfinanceFetcher] 获取 002436...
+2026-03-18 00:34:27 | INFO     | data_provider/base.py:357 | [EfinanceFetcher] 开始获取 002436 日线数据: 范围=2026-01-17 ~ 2026-03-18
+2026-03-18 00:34:28 | INFO     | data_provider/efinance_fetcher.py:389 | [API调用] ef.stock.get_quote_history(stock_codes=002436, beg=20260117, end=20260318, klt=101, fqt=1)
+2026-03-18 00:34:30 | INFO     | data_provider/efinance_fetcher.py:411 | [API返回] Eastmoney 历史K线成功: endpoint=push2his.eastmoney.com/api/qt/stock/kline/get, stock_code=002436, range=20260117~20260318, rows=36, elapsed=1.18s
+2026-03-18 00:34:30 | INFO     | data_provider/efinance_fetcher.py:416 | [API返回] 列名: ['股票名称', '股票代码', '日期', '开盘', '收盘', '最高', '最低', '成交量', '成交额', '振幅', '涨跌幅', '涨跌额', '换手率']
+2026-03-18 00:34:30 | INFO     | data_provider/efinance_fetcher.py:418 | [API返回] 日期范围: 2026-01-19 ~ 2026-03-17
+2026-03-18 00:34:30 | INFO     | data_provider/base.py:376 | [EfinanceFetcher] 002436 获取成功: 范围=2026-01-17 ~ 2026-03-18, rows=36, elapsed=2.91s
+2026-03-18 00:34:30 | INFO     | data_provider/base.py:800 | [数据源完成] 002436 使用 [EfinanceFetcher] 获取成功: rows=36, elapsed=2.91s
+2026-03-18 00:34:30 | INFO     | src/storage.py:1387 | 保存 002436 数据成功，新增 36 条
+2026-03-18 00:34:30 | INFO     | src/core/pipeline.py:166 | 兴森科技(002436) 数据保存成功（来源: EfinanceFetcher，新增 36 条）
+2026-03-18 00:34:30 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 002436 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz002436
+2026-03-18 00:34:34 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 002436 兴森科技: endpoint=qt.gtimg.cn/q, 价格=22.59, 涨跌=-5.56%, 量比=1.24, 换手率=6.34%, elapsed=4.57s
+2026-03-18 00:34:34 | INFO     | data_provider/base.py:1054 | [实时行情] 002436 成功获取 (来源: tencent)
+2026-03-18 00:34:34 | INFO     | src/core/pipeline.py:210 | 兴森科技(002436) 实时行情: 价格=22.59, 量比=1.24, 换手率=6.34% (来源: tencent)
+2026-03-18 00:34:34 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 002436 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz002436
+2026-03-18 00:34:36 | INFO     | src/core/pipeline.py:284 | 兴森科技(002436) 趋势分析: 空头排列, 买入信号=观望, 评分=38
+2026-03-18 00:34:36 | INFO     | src/core/pipeline.py:305 | 兴森科技(002436) 开始多维度情报搜索...
+2026-03-18 00:34:36 | INFO     | src/search_service.py:1966 | 开始多维度情报搜索: 兴森科技(002436), 时间范围: 近3天 (profile=short, NEWS_MAX_AGE_DAYS=3), 目标条数=3, provider请求条数=6
+2026-03-18 00:34:36 | INFO     | src/search_service.py:1995 | [情报搜索] 最新消息: 使用 Bocha
+2026-03-18 00:34:37 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='兴森科技 002436 最新 新闻 重大 事件'
+2026-03-18 00:34:37 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:34:37 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '兴森科技 002436 最新 新闻 重大 事件' 成功，返回 6 条结果，耗时 1.02s
+2026-03-18 00:34:37 | INFO     | src/search_service.py:1720 | [新闻过滤] 002436:Bocha:latest_news: provider=Bocha, total=6, kept=1, drop_unknown=0, drop_old=5, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:34:37 | INFO     | src/search_service.py:2012 | [情报搜索] 最新消息: 原始=6条, 过滤后=1条
+2026-03-18 00:34:37 | INFO     | src/search_service.py:1995 | [情报搜索] 机构分析: 使用 Tavily
+2026-03-18 00:34:39 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='兴森科技 研报 目标价 评级 深度分析', 返回 6 条结果
+2026-03-18 00:34:39 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '兴森科技 研报 目标价 评级 深度分析' 成功，返回 6 条结果，耗时 1.81s
+2026-03-18 00:34:39 | INFO     | src/search_service.py:1720 | [新闻过滤] 002436:Tavily:market_analysis: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:34:39 | INFO     | src/search_service.py:2012 | [情报搜索] 机构分析: 原始=6条, 过滤后=0条
+2026-03-18 00:34:39 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 002436 兴森科技: endpoint=qt.gtimg.cn/q, 价格=22.59, 涨跌=-5.56%, 量比=1.24, 换手率=6.34%, elapsed=5.17s
+2026-03-18 00:34:39 | INFO     | data_provider/base.py:1054 | [实时行情] 002436 成功获取 (来源: tencent)
+2026-03-18 00:34:40 | INFO     | src/search_service.py:1995 | [情报搜索] 风险排查: 使用 Bocha
+2026-03-18 00:34:41 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='兴森科技 减持 处罚 违规 诉讼 利空 风险'
+2026-03-18 00:34:41 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:34:41 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '兴森科技 减持 处罚 违规 诉讼 利空 风险' 成功，返回 6 条结果，耗时 1.03s
+2026-03-18 00:34:41 | INFO     | src/search_service.py:1720 | [新闻过滤] 002436:Bocha:risk_check: provider=Bocha, total=6, kept=3, drop_unknown=0, drop_old=3, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:34:41 | INFO     | src/search_service.py:2012 | [情报搜索] 风险排查: 原始=6条, 过滤后=3条
+2026-03-18 00:34:41 | INFO     | src/search_service.py:1995 | [情报搜索] 业绩预期: 使用 Tavily
+2026-03-18 00:34:43 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='兴森科技 业绩预告 财报 营收 净利润 同比增长', 返回 6 条结果
+2026-03-18 00:34:43 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '兴森科技 业绩预告 财报 营收 净利润 同比增长' 成功，返回 6 条结果，耗时 1.74s
+2026-03-18 00:34:43 | INFO     | src/search_service.py:1720 | [新闻过滤] 002436:Tavily:earnings: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:34:43 | INFO     | src/search_service.py:2012 | [情报搜索] 业绩预期: 原始=6条, 过滤后=0条
+2026-03-18 00:34:43 | INFO     | src/search_service.py:1995 | [情报搜索] 行业分析: 使用 Bocha
+2026-03-18 00:34:44 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='兴森科技 所在行业 竞争对手 市场份额 行业前景'
+2026-03-18 00:34:44 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:34:44 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '兴森科技 所在行业 竞争对手 市场份额 行业前景' 成功，返回 6 条结果，耗时 1.07s
+2026-03-18 00:34:44 | INFO     | src/search_service.py:1720 | [新闻过滤] 002436:Bocha:industry: provider=Bocha, total=6, kept=2, drop_unknown=0, drop_old=4, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:34:44 | INFO     | src/search_service.py:2012 | [情报搜索] 行业分析: 原始=6条, 过滤后=2条
+2026-03-18 00:34:45 | INFO     | src/core/pipeline.py:320 | 兴森科技(002436) 情报搜索完成: 共 6 条结果
+2026-03-18 00:34:45 | INFO     | src/storage.py:922 | 保存新闻情报成功: 002436, 新增 1 条
+2026-03-18 00:34:45 | INFO     | src/storage.py:922 | 保存新闻情报成功: 002436, 新增 2 条
+2026-03-18 00:34:45 | INFO     | src/storage.py:922 | 保存新闻情报成功: 002436, 新增 1 条
+2026-03-18 00:34:48 | INFO     | src/analyzer.py:952 | ========== AI 分析 兴森科技(002436) ==========
+2026-03-18 00:34:48 | INFO     | src/analyzer.py:953 | [LLM配置] 模型: gemini/gemini-3-flash-preview
+2026-03-18 00:34:48 | INFO     | src/analyzer.py:954 | [LLM配置] Prompt 长度: 3788 字符
+2026-03-18 00:34:48 | INFO     | src/analyzer.py:955 | [LLM配置] 是否包含新闻: 是
+2026-03-18 00:34:48 | INFO     | src/analyzer.py:959 | [LLM Prompt 预览]
+# 决策仪表盘分析请求
+
+## 📊 股票基础信息
+| 项目 | 数据 |
+|------|------|
+| 股票代码 | **002436** |
+| 股票名称 | **兴森科技** |
+| 分析日期 | 2026-03-18 |
+
+---
+
+## 📈 技术面数据
+
+### 今日行情
+| 指标 | 数值 |
+|------|------|
+| 收盘价 | 22.59 元 |
+| 开盘价 | 24.33 元 |
+| 最高价 | 24.42 元 |
+| 最低价 | 22.59 元 |
+| 涨跌幅 | -5.56% |
+| 成交量 | 9582.40 万股 |
+| 成交额 | 22.16 亿元 |
+
+### 均线系统（关键判断指标）
+| 均线 | 数值 | 说明 |
+|------|------|------|
+| MA5 | 23.34 | 短期趋势线 |
+| MA10 | 24.008 | 中短期趋势线 |
+| MA20 | 24.3715 | 中期趋势线 |
+| 均线形态 | 空头排列 📉 | 多头/空头/缠绕 |
+
+### 实时行情增强数据
+| 指标 | 数值 | 解读 |
+|--...
+2026-03-18 00:34:48 | INFO     | src/analyzer.py:968 | [LLM调用] 开始调用 gemini/gemini-3-flash-preview...
+2026-03-18 00:34:48 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:3932 | 
+LiteLLM completion() model= gemini-3-flash-preview; provider = gemini
+2026-03-18 00:34:48 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/llms/vertex_ai/gemini/vertex_and_google_ai_studio_gemini.py:1007 | Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-3-flash-preview) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+2026-03-18 00:35:05 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:1656 | Wrapper: Completed Call, calling success_handler
+2026-03-18 00:35:05 | INFO     | src/analyzer.py:981 | [LLM返回] gemini/gemini-3-flash-preview 响应成功, 耗时 17.30s, 响应长度 3933 字符
+2026-03-18 00:35:05 | INFO     | src/analyzer.py:985 | [LLM返回 预览]
+```json
+{
+    "stock_name": "兴森科技（002436）",
+    "sentiment_score": 32,
+    "trend_prediction": "强烈看空",
+    "operation_advice": "观望/卖出",
+    "decision_type": "sell",
+    "confidence_level": "高",
+
+    "dashboard": {
+        "core_conclusion": {
+            "one_sentence": "标准空头排列叠加放量破位，基本面亏损严重，坚决不抄底。"...
+2026-03-18 00:35:05 | INFO     | src/analyzer.py:1025 | [LLM解析] 兴森科技(002436) 分析完成: 强烈看空, 评分 32
+2026-03-18 00:35:05 | INFO     | src/core/pipeline.py:1051 | [002436] 分析完成: 观望/卖出, 评分 32
+2026-03-18 00:35:05 | INFO     | src/core/pipeline.py:1027 | ========== 开始处理 600089 ==========
+2026-03-18 00:35:05 | INFO     | src/core/pipeline.py:158 | 特变电工(600089) 开始从数据源获取数据...
+2026-03-18 00:35:05 | INFO     | data_provider/base.py:790 | [数据源尝试 1/6] [EfinanceFetcher] 获取 600089...
+2026-03-18 00:35:05 | INFO     | data_provider/base.py:357 | [EfinanceFetcher] 开始获取 600089 日线数据: 范围=2026-01-17 ~ 2026-03-18
+2026-03-18 00:35:07 | INFO     | data_provider/efinance_fetcher.py:389 | [API调用] ef.stock.get_quote_history(stock_codes=600089, beg=20260117, end=20260318, klt=101, fqt=1)
+2026-03-18 00:35:08 | INFO     | data_provider/efinance_fetcher.py:411 | [API返回] Eastmoney 历史K线成功: endpoint=push2his.eastmoney.com/api/qt/stock/kline/get, stock_code=600089, range=20260117~20260318, rows=36, elapsed=0.80s
+2026-03-18 00:35:08 | INFO     | data_provider/efinance_fetcher.py:416 | [API返回] 列名: ['股票名称', '股票代码', '日期', '开盘', '收盘', '最高', '最低', '成交量', '成交额', '振幅', '涨跌幅', '涨跌额', '换手率']
+2026-03-18 00:35:08 | INFO     | data_provider/efinance_fetcher.py:418 | [API返回] 日期范围: 2026-01-19 ~ 2026-03-17
+2026-03-18 00:35:08 | INFO     | data_provider/base.py:376 | [EfinanceFetcher] 600089 获取成功: 范围=2026-01-17 ~ 2026-03-18, rows=36, elapsed=2.54s
+2026-03-18 00:35:08 | INFO     | data_provider/base.py:800 | [数据源完成] 600089 使用 [EfinanceFetcher] 获取成功: rows=36, elapsed=2.54s
+2026-03-18 00:35:08 | INFO     | src/storage.py:1387 | 保存 600089 数据成功，新增 36 条
+2026-03-18 00:35:08 | INFO     | src/core/pipeline.py:166 | 特变电工(600089) 数据保存成功（来源: EfinanceFetcher，新增 36 条）
+2026-03-18 00:35:08 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 600089 实时行情: endpoint=qt.gtimg.cn/q, symbol=sh600089
+2026-03-18 00:35:11 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 600089 特变电工: endpoint=qt.gtimg.cn/q, 价格=28.59, 涨跌=-2.42%, 量比=0.73, 换手率=3.79%, elapsed=2.80s
+2026-03-18 00:35:11 | INFO     | data_provider/base.py:1054 | [实时行情] 600089 成功获取 (来源: tencent)
+2026-03-18 00:35:11 | INFO     | src/core/pipeline.py:210 | 特变电工(600089) 实时行情: 价格=28.59, 量比=0.73, 换手率=3.79% (来源: tencent)
+2026-03-18 00:35:11 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 600089 实时行情: endpoint=qt.gtimg.cn/q, symbol=sh600089
+2026-03-18 00:35:12 | INFO     | src/core/pipeline.py:284 | 特变电工(600089) 趋势分析: 弱势空头, 买入信号=观望, 评分=35
+2026-03-18 00:35:12 | INFO     | src/core/pipeline.py:305 | 特变电工(600089) 开始多维度情报搜索...
+2026-03-18 00:35:12 | INFO     | src/search_service.py:1966 | 开始多维度情报搜索: 特变电工(600089), 时间范围: 近3天 (profile=short, NEWS_MAX_AGE_DAYS=3), 目标条数=3, provider请求条数=6
+2026-03-18 00:35:12 | INFO     | src/search_service.py:1995 | [情报搜索] 最新消息: 使用 Bocha
+2026-03-18 00:35:13 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='特变电工 600089 最新 新闻 重大 事件'
+2026-03-18 00:35:13 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:35:13 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '特变电工 600089 最新 新闻 重大 事件' 成功，返回 6 条结果，耗时 1.04s
+2026-03-18 00:35:13 | INFO     | src/search_service.py:1720 | [新闻过滤] 600089:Bocha:latest_news: provider=Bocha, total=6, kept=2, drop_unknown=0, drop_old=4, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:35:13 | INFO     | src/search_service.py:2012 | [情报搜索] 最新消息: 原始=6条, 过滤后=2条
+2026-03-18 00:35:14 | INFO     | src/search_service.py:1995 | [情报搜索] 机构分析: 使用 Tavily
+2026-03-18 00:35:16 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='特变电工 研报 目标价 评级 深度分析', 返回 6 条结果
+2026-03-18 00:35:16 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '特变电工 研报 目标价 评级 深度分析' 成功，返回 6 条结果，耗时 2.00s
+2026-03-18 00:35:16 | INFO     | src/search_service.py:1720 | [新闻过滤] 600089:Tavily:market_analysis: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:35:16 | INFO     | src/search_service.py:2012 | [情报搜索] 机构分析: 原始=6条, 过滤后=0条
+2026-03-18 00:35:16 | INFO     | src/search_service.py:1995 | [情报搜索] 风险排查: 使用 Bocha
+2026-03-18 00:35:16 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 600089 特变电工: endpoint=qt.gtimg.cn/q, 价格=28.59, 涨跌=-2.42%, 量比=0.73, 换手率=3.79%, elapsed=5.66s
+2026-03-18 00:35:16 | INFO     | data_provider/base.py:1054 | [实时行情] 600089 成功获取 (来源: tencent)
+2026-03-18 00:35:17 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='特变电工 减持 处罚 违规 诉讼 利空 风险'
+2026-03-18 00:35:17 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:35:17 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '特变电工 减持 处罚 违规 诉讼 利空 风险' 成功，返回 6 条结果，耗时 1.00s
+2026-03-18 00:35:17 | INFO     | src/search_service.py:1720 | [新闻过滤] 600089:Bocha:risk_check: provider=Bocha, total=6, kept=3, drop_unknown=0, drop_old=2, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:35:17 | INFO     | src/search_service.py:2012 | [情报搜索] 风险排查: 原始=6条, 过滤后=3条
+2026-03-18 00:35:18 | INFO     | src/search_service.py:1995 | [情报搜索] 业绩预期: 使用 Tavily
+2026-03-18 00:35:20 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='特变电工 业绩预告 财报 营收 净利润 同比增长', 返回 6 条结果
+2026-03-18 00:35:20 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '特变电工 业绩预告 财报 营收 净利润 同比增长' 成功，返回 6 条结果，耗时 2.10s
+2026-03-18 00:35:20 | INFO     | src/search_service.py:1720 | [新闻过滤] 600089:Tavily:earnings: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:35:20 | INFO     | src/search_service.py:2012 | [情报搜索] 业绩预期: 原始=6条, 过滤后=0条
+2026-03-18 00:35:20 | INFO     | src/search_service.py:1995 | [情报搜索] 行业分析: 使用 Bocha
+2026-03-18 00:35:21 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='特变电工 所在行业 竞争对手 市场份额 行业前景'
+2026-03-18 00:35:21 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:35:21 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '特变电工 所在行业 竞争对手 市场份额 行业前景' 成功，返回 6 条结果，耗时 1.11s
+2026-03-18 00:35:21 | INFO     | src/search_service.py:1720 | [新闻过滤] 600089:Bocha:industry: provider=Bocha, total=6, kept=3, drop_unknown=0, drop_old=3, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:35:21 | INFO     | src/search_service.py:2012 | [情报搜索] 行业分析: 原始=6条, 过滤后=3条
+2026-03-18 00:35:22 | INFO     | src/core/pipeline.py:320 | 特变电工(600089) 情报搜索完成: 共 8 条结果
+2026-03-18 00:35:22 | INFO     | src/storage.py:922 | 保存新闻情报成功: 600089, 新增 2 条
+2026-03-18 00:35:22 | INFO     | src/storage.py:922 | 保存新闻情报成功: 600089, 新增 2 条
+2026-03-18 00:35:22 | INFO     | src/storage.py:922 | 保存新闻情报成功: 600089, 新增 3 条
+2026-03-18 00:35:25 | INFO     | src/analyzer.py:952 | ========== AI 分析 特变电工(600089) ==========
+2026-03-18 00:35:25 | INFO     | src/analyzer.py:953 | [LLM配置] 模型: gemini/gemini-3-flash-preview
+2026-03-18 00:35:25 | INFO     | src/analyzer.py:954 | [LLM配置] Prompt 长度: 4211 字符
+2026-03-18 00:35:25 | INFO     | src/analyzer.py:955 | [LLM配置] 是否包含新闻: 是
+2026-03-18 00:35:25 | INFO     | src/analyzer.py:959 | [LLM Prompt 预览]
+# 决策仪表盘分析请求
+
+## 📊 股票基础信息
+| 项目 | 数据 |
+|------|------|
+| 股票代码 | **600089** |
+| 股票名称 | **特变电工** |
+| 分析日期 | 2026-03-18 |
+
+---
+
+## 📈 技术面数据
+
+### 今日行情
+| 指标 | 数值 |
+|------|------|
+| 收盘价 | 28.59 元 |
+| 开盘价 | 29.45 元 |
+| 最高价 | 29.78 元 |
+| 最低价 | 28.58 元 |
+| 涨跌幅 | -2.42% |
+| 成交量 | 1.92 亿股 |
+| 成交额 | 55.86 亿元 |
+
+### 均线系统（关键判断指标）
+| 均线 | 数值 | 说明 |
+|------|------|------|
+| MA5 | 29.528000000000002 | 短期趋势线 |
+| MA10 | 30.831 | 中短期趋势线 |
+| MA20 | 30.339499999999997 | 中期趋势线 |
+| 均线形态 | 短期走弱 🔽 | 多头/空头/缠绕 |
+
+### 实时行情增强数据...
+2026-03-18 00:35:25 | INFO     | src/analyzer.py:968 | [LLM调用] 开始调用 gemini/gemini-3-flash-preview...
+2026-03-18 00:35:25 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:3932 | 
+LiteLLM completion() model= gemini-3-flash-preview; provider = gemini
+2026-03-18 00:35:25 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/llms/vertex_ai/gemini/vertex_and_google_ai_studio_gemini.py:1007 | Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-3-flash-preview) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+2026-03-18 00:35:42 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:1656 | Wrapper: Completed Call, calling success_handler
+2026-03-18 00:35:42 | INFO     | src/analyzer.py:981 | [LLM返回] gemini/gemini-3-flash-preview 响应成功, 耗时 17.24s, 响应长度 4114 字符
+2026-03-18 00:35:42 | INFO     | src/analyzer.py:985 | [LLM返回 预览]
+```json
+{
+    "stock_name": "特变电工（600089）",
+    "sentiment_score": 35,
+    "trend_prediction": "看空",
+    "operation_advice": "观望",
+    "decision_type": "sell",
+    "confidence_level": "高",
+
+    "dashboard": {
+        "core_conclusion": {
+            "one_sentence": "趋势走坏且均线死叉，缩量阴跌缺乏承接，建议空仓观望，持仓者逢高减仓...
+2026-03-18 00:35:42 | INFO     | src/analyzer.py:1025 | [LLM解析] 特变电工(600089) 分析完成: 看空, 评分 35
+2026-03-18 00:35:42 | INFO     | src/core/pipeline.py:1051 | [600089] 分析完成: 观望, 评分 35
+2026-03-18 00:35:42 | INFO     | src/core/pipeline.py:1027 | ========== 开始处理 001203 ==========
+2026-03-18 00:35:42 | INFO     | src/core/pipeline.py:158 | 大中矿业(001203) 开始从数据源获取数据...
+2026-03-18 00:35:42 | INFO     | data_provider/base.py:790 | [数据源尝试 1/6] [EfinanceFetcher] 获取 001203...
+2026-03-18 00:35:42 | INFO     | data_provider/base.py:357 | [EfinanceFetcher] 开始获取 001203 日线数据: 范围=2026-01-17 ~ 2026-03-18
+2026-03-18 00:35:44 | INFO     | data_provider/efinance_fetcher.py:389 | [API调用] ef.stock.get_quote_history(stock_codes=001203, beg=20260117, end=20260318, klt=101, fqt=1)
+2026-03-18 00:35:46 | INFO     | data_provider/efinance_fetcher.py:411 | [API返回] Eastmoney 历史K线成功: endpoint=push2his.eastmoney.com/api/qt/stock/kline/get, stock_code=001203, range=20260117~20260318, rows=36, elapsed=1.24s
+2026-03-18 00:35:46 | INFO     | data_provider/efinance_fetcher.py:416 | [API返回] 列名: ['股票名称', '股票代码', '日期', '开盘', '收盘', '最高', '最低', '成交量', '成交额', '振幅', '涨跌幅', '涨跌额', '换手率']
+2026-03-18 00:35:46 | INFO     | data_provider/efinance_fetcher.py:418 | [API返回] 日期范围: 2026-01-19 ~ 2026-03-17
+2026-03-18 00:35:46 | INFO     | data_provider/base.py:376 | [EfinanceFetcher] 001203 获取成功: 范围=2026-01-17 ~ 2026-03-18, rows=36, elapsed=3.42s
+2026-03-18 00:35:46 | INFO     | data_provider/base.py:800 | [数据源完成] 001203 使用 [EfinanceFetcher] 获取成功: rows=36, elapsed=3.42s
+2026-03-18 00:35:46 | INFO     | src/storage.py:1387 | 保存 001203 数据成功，新增 36 条
+2026-03-18 00:35:46 | INFO     | src/core/pipeline.py:166 | 大中矿业(001203) 数据保存成功（来源: EfinanceFetcher，新增 36 条）
+2026-03-18 00:35:46 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 001203 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz001203
+2026-03-18 00:35:50 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 001203 大中矿业: endpoint=qt.gtimg.cn/q, 价格=37.78, 涨跌=-3.0%, 量比=0.66, 换手率=1.52%, elapsed=4.66s
+2026-03-18 00:35:50 | INFO     | data_provider/base.py:1054 | [实时行情] 001203 成功获取 (来源: tencent)
+2026-03-18 00:35:50 | INFO     | src/core/pipeline.py:210 | 大中矿业(001203) 实时行情: 价格=37.78, 量比=0.66, 换手率=1.52% (来源: tencent)
+2026-03-18 00:35:50 | INFO     | data_provider/akshare_fetcher.py:1099 | [API调用] 腾讯财经接口获取 001203 实时行情: endpoint=qt.gtimg.cn/q, symbol=sz001203
+2026-03-18 00:35:52 | INFO     | src/core/pipeline.py:284 | 大中矿业(001203) 趋势分析: 多头排列, 买入信号=买入, 评分=64
+2026-03-18 00:35:52 | INFO     | src/core/pipeline.py:305 | 大中矿业(001203) 开始多维度情报搜索...
+2026-03-18 00:35:52 | INFO     | src/search_service.py:1966 | 开始多维度情报搜索: 大中矿业(001203), 时间范围: 近3天 (profile=short, NEWS_MAX_AGE_DAYS=3), 目标条数=3, provider请求条数=6
+2026-03-18 00:35:52 | INFO     | src/search_service.py:1995 | [情报搜索] 最新消息: 使用 Bocha
+2026-03-18 00:35:53 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='大中矿业 001203 最新 新闻 重大 事件'
+2026-03-18 00:35:53 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:35:53 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '大中矿业 001203 最新 新闻 重大 事件' 成功，返回 6 条结果，耗时 1.13s
+2026-03-18 00:35:53 | INFO     | src/search_service.py:1720 | [新闻过滤] 001203:Bocha:latest_news: provider=Bocha, total=6, kept=2, drop_unknown=0, drop_old=4, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:35:53 | INFO     | src/search_service.py:2012 | [情报搜索] 最新消息: 原始=6条, 过滤后=2条
+2026-03-18 00:35:53 | INFO     | src/search_service.py:1995 | [情报搜索] 机构分析: 使用 Tavily
+2026-03-18 00:35:55 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='大中矿业 研报 目标价 评级 深度分析', 返回 6 条结果
+2026-03-18 00:35:55 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '大中矿业 研报 目标价 评级 深度分析' 成功，返回 6 条结果，耗时 2.10s
+2026-03-18 00:35:55 | INFO     | src/search_service.py:1720 | [新闻过滤] 001203:Tavily:market_analysis: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:35:55 | INFO     | src/search_service.py:2012 | [情报搜索] 机构分析: 原始=6条, 过滤后=0条
+2026-03-18 00:35:56 | INFO     | src/search_service.py:1995 | [情报搜索] 风险排查: 使用 Bocha
+2026-03-18 00:35:57 | INFO     | data_provider/akshare_fetcher.py:1204 | [实时行情-腾讯] 001203 大中矿业: endpoint=qt.gtimg.cn/q, 价格=37.78, 涨跌=-3.0%, 量比=0.66, 换手率=1.52%, elapsed=6.30s
+2026-03-18 00:35:57 | INFO     | data_provider/base.py:1054 | [实时行情] 001203 成功获取 (来源: tencent)
+2026-03-18 00:35:57 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='大中矿业 减持 处罚 违规 诉讼 利空 风险'
+2026-03-18 00:35:57 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:35:57 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '大中矿业 减持 处罚 违规 诉讼 利空 风险' 成功，返回 6 条结果，耗时 1.05s
+2026-03-18 00:35:57 | INFO     | src/search_service.py:1720 | [新闻过滤] 001203:Bocha:risk_check: provider=Bocha, total=6, kept=2, drop_unknown=0, drop_old=4, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:35:57 | INFO     | src/search_service.py:2012 | [情报搜索] 风险排查: 原始=6条, 过滤后=2条
+2026-03-18 00:35:58 | INFO     | src/search_service.py:1995 | [情报搜索] 业绩预期: 使用 Tavily
+2026-03-18 00:36:00 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='大中矿业 业绩预告 财报 营收 净利润 同比增长', 返回 6 条结果
+2026-03-18 00:36:00 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '大中矿业 业绩预告 财报 营收 净利润 同比增长' 成功，返回 6 条结果，耗时 2.03s
+2026-03-18 00:36:00 | INFO     | src/search_service.py:1720 | [新闻过滤] 001203:Tavily:earnings: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:36:00 | INFO     | src/search_service.py:2012 | [情报搜索] 业绩预期: 原始=6条, 过滤后=0条
+2026-03-18 00:36:00 | INFO     | src/search_service.py:1995 | [情报搜索] 行业分析: 使用 Bocha
+2026-03-18 00:36:01 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='大中矿业 所在行业 竞争对手 市场份额 行业前景'
+2026-03-18 00:36:01 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:36:01 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '大中矿业 所在行业 竞争对手 市场份额 行业前景' 成功，返回 6 条结果，耗时 1.01s
+2026-03-18 00:36:01 | INFO     | src/search_service.py:1720 | [新闻过滤] 001203:Bocha:industry: provider=Bocha, total=6, kept=0, drop_unknown=0, drop_old=6, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:36:01 | INFO     | src/search_service.py:2012 | [情报搜索] 行业分析: 原始=6条, 过滤后=0条
+2026-03-18 00:36:02 | INFO     | src/core/pipeline.py:320 | 大中矿业(001203) 情报搜索完成: 共 4 条结果
+2026-03-18 00:36:02 | INFO     | src/storage.py:922 | 保存新闻情报成功: 001203, 新增 2 条
+2026-03-18 00:36:02 | INFO     | src/storage.py:922 | 保存新闻情报成功: 001203, 新增 2 条
+2026-03-18 00:36:05 | INFO     | src/analyzer.py:952 | ========== AI 分析 大中矿业(001203) ==========
+2026-03-18 00:36:05 | INFO     | src/analyzer.py:953 | [LLM配置] 模型: gemini/gemini-3-flash-preview
+2026-03-18 00:36:05 | INFO     | src/analyzer.py:954 | [LLM配置] Prompt 长度: 3343 字符
+2026-03-18 00:36:05 | INFO     | src/analyzer.py:955 | [LLM配置] 是否包含新闻: 是
+2026-03-18 00:36:05 | INFO     | src/analyzer.py:959 | [LLM Prompt 预览]
+# 决策仪表盘分析请求
+
+## 📊 股票基础信息
+| 项目 | 数据 |
+|------|------|
+| 股票代码 | **001203** |
+| 股票名称 | **大中矿业** |
+| 分析日期 | 2026-03-18 |
+
+---
+
+## 📈 技术面数据
+
+### 今日行情
+| 指标 | 数值 |
+|------|------|
+| 收盘价 | 37.78 元 |
+| 开盘价 | 39.43 元 |
+| 最高价 | 40.8 元 |
+| 最低价 | 37.7 元 |
+| 涨跌幅 | -3.0% |
+| 成交量 | 2003.46 万股 |
+| 成交额 | 7.75 亿元 |
+
+### 均线系统（关键判断指标）
+| 均线 | 数值 | 说明 |
+|------|------|------|
+| MA5 | 38.36 | 短期趋势线 |
+| MA10 | 37.674 | 中短期趋势线 |
+| MA20 | 37.197500000000005 | 中期趋势线 |
+| 均线形态 | 震荡整理 ↔️ | 多头/空头/缠绕 |
+
+### 实时行情增强数据
+| 指标 | 数值 | ...
+2026-03-18 00:36:05 | INFO     | src/analyzer.py:968 | [LLM调用] 开始调用 gemini/gemini-3-flash-preview...
+2026-03-18 00:36:05 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:3932 | 
+LiteLLM completion() model= gemini-3-flash-preview; provider = gemini
+2026-03-18 00:36:05 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/llms/vertex_ai/gemini/vertex_and_google_ai_studio_gemini.py:1007 | Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-3-flash-preview) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+2026-03-18 00:36:20 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:1656 | Wrapper: Completed Call, calling success_handler
+2026-03-18 00:36:20 | INFO     | src/analyzer.py:981 | [LLM返回] gemini/gemini-3-flash-preview 响应成功, 耗时 15.04s, 响应长度 4007 字符
+2026-03-18 00:36:20 | INFO     | src/analyzer.py:985 | [LLM返回 预览]
+```json
+{
+    "stock_name": "大中矿业（001203）",
+    "sentiment_score": 72,
+    "trend_prediction": "看多",
+    "operation_advice": "买入",
+    "decision_type": "buy",
+    "confidence_level": "中",
+
+    "dashboard": {
+        "core_conclusion": {
+            "one_sentence": "多头趋势下缩量回踩MA10支撑，乖离率安全，建议分批低吸。",
+  ...
+2026-03-18 00:36:20 | INFO     | src/analyzer.py:1025 | [LLM解析] 大中矿业(001203) 分析完成: 看多, 评分 72
+2026-03-18 00:36:20 | INFO     | src/core/pipeline.py:1051 | [001203] 分析完成: 买入, 评分 72
+2026-03-18 00:36:20 | INFO     | src/core/pipeline.py:1202 | ===== 分析完成 =====
+2026-03-18 00:36:20 | INFO     | src/core/pipeline.py:1203 | 成功: 7, 失败: 0, 耗时: 534.39 秒
+2026-03-18 00:36:20 | INFO     | src/notification.py:1655 | 日报已保存到: /home/runner/work/daily_stock_analysis/daily_stock_analysis/reports/report_20260318.md
+2026-03-18 00:36:20 | INFO     | src/core/pipeline.py:1233 | 决策仪表盘日报已保存: /home/runner/work/daily_stock_analysis/daily_stock_analysis/reports/report_20260318.md
+2026-03-18 00:36:20 | INFO     | src/core/pipeline.py:1253 | 生成决策仪表盘日报...
+2026-03-18 00:36:20 | INFO     | src/notification_sender/email_sender.py:182 | 自动识别邮箱类型: qq.com -> smtp.qq.com:465
+2026-03-18 00:36:22 | INFO     | src/notification_sender/email_sender.py:202 | 邮件发送成功，收件人: ['1940344890@qq.com']
+2026-03-18 00:36:23 | INFO     | src/core/pipeline.py:1418 | 决策仪表盘推送成功
+2026-03-18 00:36:23 | INFO     | main.py:329 | 等待 10.0 秒后执行大盘复盘（避免API限流）...
+2026-03-18 00:36:33 | INFO     | src/core/market_review.py:49 | 开始执行大盘复盘分析...
+2026-03-18 00:36:33 | WARNING  | data_provider/tushare_fetcher.py:124 | Tushare Token 未配置，此数据源不可用
+2026-03-18 00:36:33 | INFO     | data_provider/base.py:706 | 已初始化 6 个数据源（按优先级）: EfinanceFetcher(P0), AkshareFetcher(P1), TushareFetcher(P2), PytdxFetcher(P2), BaostockFetcher(P3), YfinanceFetcher(P4)
+2026-03-18 00:36:33 | INFO     | src/market_analyzer.py:680 | ========== 开始大盘复盘分析 ==========
+2026-03-18 00:36:33 | INFO     | src/market_analyzer.py:146 | [大盘] 获取主要指数实时行情...
+2026-03-18 00:36:35 | INFO     | data_provider/efinance_fetcher.py:821 | [API调用] ef.stock.get_realtime_quotes(['沪深系列指数']) 获取指数行情...
+2026-03-18 00:36:37 | INFO     | data_provider/efinance_fetcher.py:831 | [API返回] 指数行情成功: 1067 条, 耗时 2.84s
+2026-03-18 00:36:37 | INFO     | data_provider/efinance_fetcher.py:871 | [efinance] 获取到 5 个指数行情
+2026-03-18 00:36:37 | INFO     | data_provider/base.py:1355 | [EfinanceFetcher] 获取指数行情成功
+2026-03-18 00:36:37 | INFO     | src/market_analyzer.py:172 | [大盘] 获取到 5 个指数行情
+2026-03-18 00:36:37 | INFO     | src/market_analyzer.py:182 | [大盘] 获取市场涨跌统计...
+2026-03-18 00:36:39 | INFO     | data_provider/efinance_fetcher.py:894 | [API调用] ef.stock.get_realtime_quotes() 获取市场统计...
+2026-03-18 00:36:39 | WARNING  | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/urllib3/connectionpool.py:868 | Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'RemoteDisconnected('Remote end closed connection without response')': /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A0+t%3A6%2Cm%3A0+t%3A80%2Cm%3A1+t%3A2%2Cm%3A1+t%3A23%2Cm%3A0+t%3A81+s%3A2048&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297
+2026-03-18 00:36:40 | WARNING  | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/urllib3/connectionpool.py:868 | Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'RemoteDisconnected('Remote end closed connection without response')': /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A0+t%3A6%2Cm%3A0+t%3A80%2Cm%3A1+t%3A2%2Cm%3A1+t%3A23%2Cm%3A0+t%3A81+s%3A2048&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297
+2026-03-18 00:36:40 | WARNING  | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/urllib3/connectionpool.py:868 | Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'RemoteDisconnected('Remote end closed connection without response')': /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A0+t%3A6%2Cm%3A0+t%3A80%2Cm%3A1+t%3A2%2Cm%3A1+t%3A23%2Cm%3A0+t%3A81+s%3A2048&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297
+2026-03-18 00:36:41 | WARNING  | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/urllib3/connectionpool.py:868 | Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'RemoteDisconnected('Remote end closed connection without response')': /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A0+t%3A6%2Cm%3A0+t%3A80%2Cm%3A1+t%3A2%2Cm%3A1+t%3A23%2Cm%3A0+t%3A81+s%3A2048&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297
+2026-03-18 00:36:41 | WARNING  | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/urllib3/connectionpool.py:868 | Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'RemoteDisconnected('Remote end closed connection without response')': /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A0+t%3A6%2Cm%3A0+t%3A80%2Cm%3A1+t%3A2%2Cm%3A1+t%3A23%2Cm%3A0+t%3A81+s%3A2048&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297
+2026-03-18 00:36:42 | ERROR    | data_provider/efinance_fetcher.py:905 | [efinance] 获取市场统计失败: HTTPConnectionPool(host='push2.eastmoney.com', port=80): Max retries exceeded with url: /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A0+t%3A6%2Cm%3A0+t%3A80%2Cm%3A1+t%3A2%2Cm%3A1+t%3A23%2Cm%3A0+t%3A81+s%3A2048&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297 (Caused by ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')))
+2026-03-18 00:36:44 | INFO     | data_provider/akshare_fetcher.py:1602 | [API调用] ak.stock_zh_a_spot_em() 获取市场统计...
+2026-03-18 00:36:52 | WARNING  | data_provider/akshare_fetcher.py:1607 | [Akshare] 东财接口获取市场统计失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))，尝试新浪接口
+2026-03-18 00:36:55 | INFO     | data_provider/akshare_fetcher.py:1614 | [API调用] ak.stock_zh_a_spot() 获取市场统计(新浪)...
+2026-03-18 00:37:33 | INFO     | data_provider/base.py:1368 | [AkshareFetcher] 获取市场统计成功
+2026-03-18 00:37:33 | INFO     | src/market_analyzer.py:194 | [大盘] 涨:866 跌:4541 平:70 涨停:52 跌停:15 成交额:22241亿
+2026-03-18 00:37:33 | INFO     | src/market_analyzer.py:204 | [大盘] 获取板块涨跌榜...
+2026-03-18 00:37:34 | INFO     | data_provider/efinance_fetcher.py:1007 | [API调用] ef.stock.get_realtime_quotes(['行业板块']) 获取板块行情...
+2026-03-18 00:37:35 | WARNING  | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/urllib3/connectionpool.py:868 | Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'RemoteDisconnected('Remote end closed connection without response')': /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A90+t%3A2+f%3A%2150&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297
+2026-03-18 00:37:35 | WARNING  | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/urllib3/connectionpool.py:868 | Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'RemoteDisconnected('Remote end closed connection without response')': /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A90+t%3A2+f%3A%2150&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297
+2026-03-18 00:37:36 | WARNING  | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/urllib3/connectionpool.py:868 | Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'RemoteDisconnected('Remote end closed connection without response')': /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A90+t%3A2+f%3A%2150&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297
+2026-03-18 00:37:36 | WARNING  | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/urllib3/connectionpool.py:868 | Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'RemoteDisconnected('Remote end closed connection without response')': /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A90+t%3A2+f%3A%2150&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297
+2026-03-18 00:37:36 | WARNING  | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/urllib3/connectionpool.py:868 | Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'RemoteDisconnected('Remote end closed connection without response')': /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A90+t%3A2+f%3A%2150&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297
+2026-03-18 00:37:37 | ERROR    | data_provider/efinance_fetcher.py:1033 | [efinance] 获取板块排行失败: HTTPConnectionPool(host='push2.eastmoney.com', port=80): Max retries exceeded with url: /api/qt/clist/get?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A90+t%3A2+f%3A%2150&fields=f12%2Cf14%2Cf3%2Cf2%2Cf15%2Cf16%2Cf17%2Cf4%2Cf8%2Cf10%2Cf9%2Cf5%2Cf6%2Cf18%2Cf20%2Cf21%2Cf13%2Cf124%2Cf297 (Caused by ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')))
+2026-03-18 00:37:39 | INFO     | data_provider/akshare_fetcher.py:1745 | [API调用] ak.stock_board_industry_name_em() 获取板块排行...
+2026-03-18 00:37:47 | WARNING  | data_provider/akshare_fetcher.py:1753 | [Akshare] 东财接口获取行业板块排行失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))，尝试新浪接口
+2026-03-18 00:37:49 | INFO     | data_provider/akshare_fetcher.py:1760 | [API调用] ak.stock_sector_spot() 获取行业板块排行(新浪)...
+2026-03-18 00:37:50 | INFO     | data_provider/base.py:2157 | [AkshareFetcher] 获取板块排行成功
+2026-03-18 00:37:50 | INFO     | src/market_analyzer.py:212 | [大盘] 领涨板块: ['建筑安装业', '木材加工和木、竹、藤、棕、草制品业', '住宿业', '化学纤维制造业', '保险业']
+2026-03-18 00:37:50 | INFO     | src/market_analyzer.py:213 | [大盘] 领跌板块: ['计算机、通信和其他电子设备制造业', '渔业', '科技推广和应用服务业', '体育', '仪器仪表制造业']
+2026-03-18 00:37:50 | INFO     | src/market_analyzer.py:256 | [大盘] 开始搜索市场新闻...
+2026-03-18 00:37:50 | INFO     | src/search_service.py:1778 | 搜索股票新闻: 大盘(market), query='A股 大盘 复盘', 时间范围: 近3天 (profile=short, NEWS_MAX_AGE_DAYS=3), 目标条数=3, provider请求条数=6
+2026-03-18 00:37:51 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='A股 大盘 复盘'
+2026-03-18 00:37:51 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 5 条结果
+2026-03-18 00:37:51 | INFO     | src/search_service.py:237 | [Bocha] 搜索 'A股 大盘 复盘' 成功，返回 5 条结果，耗时 1.03s
+2026-03-18 00:37:51 | INFO     | src/search_service.py:1720 | [新闻过滤] market:Bocha:stock_news: provider=Bocha, total=5, kept=1, drop_unknown=0, drop_old=4, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:37:51 | INFO     | src/search_service.py:1816 | 使用 Bocha 搜索成功
+2026-03-18 00:37:51 | INFO     | src/market_analyzer.py:269 | [大盘] 搜索 'A股 大盘 复盘' 获取 1 条结果
+2026-03-18 00:37:51 | INFO     | src/search_service.py:1778 | 搜索股票新闻: 大盘(market), query='股市 行情 分析', 时间范围: 近3天 (profile=short, NEWS_MAX_AGE_DAYS=3), 目标条数=3, provider请求条数=6
+2026-03-18 00:37:52 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='股市 行情 分析'
+2026-03-18 00:37:52 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 2 条结果
+2026-03-18 00:37:52 | INFO     | src/search_service.py:237 | [Bocha] 搜索 '股市 行情 分析' 成功，返回 2 条结果，耗时 1.04s
+2026-03-18 00:37:52 | INFO     | src/search_service.py:1720 | [新闻过滤] market:Bocha:stock_news: provider=Bocha, total=2, kept=0, drop_unknown=0, drop_old=2, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:37:52 | INFO     | src/search_service.py:1821 | Bocha 搜索成功但过滤后无有效新闻，继续尝试下一引擎
+2026-03-18 00:37:52 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='股市 行情 分析', 返回 6 条结果
+2026-03-18 00:37:52 | INFO     | src/search_service.py:237 | [Tavily] 搜索 '股市 行情 分析' 成功，返回 6 条结果，耗时 0.34s
+2026-03-18 00:37:52 | INFO     | src/search_service.py:1720 | [新闻过滤] market:Tavily:stock_news: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:37:52 | INFO     | src/search_service.py:1821 | Tavily 搜索成功但过滤后无有效新闻，继续尝试下一引擎
+2026-03-18 00:37:52 | INFO     | src/search_service.py:1778 | 搜索股票新闻: 大盘(market), query='A股 市场 热点 板块', 时间范围: 近3天 (profile=short, NEWS_MAX_AGE_DAYS=3), 目标条数=3, provider请求条数=6
+2026-03-18 00:37:53 | INFO     | src/search_service.py:671 | [Bocha] 搜索完成，query='A股 市场 热点 板块'
+2026-03-18 00:37:53 | INFO     | src/search_service.py:695 | [Bocha] 成功解析 6 条结果
+2026-03-18 00:37:53 | INFO     | src/search_service.py:237 | [Bocha] 搜索 'A股 市场 热点 板块' 成功，返回 6 条结果，耗时 1.08s
+2026-03-18 00:37:53 | INFO     | src/search_service.py:1720 | [新闻过滤] market:Bocha:stock_news: provider=Bocha, total=6, kept=0, drop_unknown=0, drop_old=6, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:37:53 | INFO     | src/search_service.py:1821 | Bocha 搜索成功但过滤后无有效新闻，继续尝试下一引擎
+2026-03-18 00:37:54 | INFO     | src/search_service.py:299 | [Tavily] 搜索完成，query='A股 市场 热点 板块', 返回 6 条结果
+2026-03-18 00:37:54 | INFO     | src/search_service.py:237 | [Tavily] 搜索 'A股 市场 热点 板块' 成功，返回 6 条结果，耗时 0.32s
+2026-03-18 00:37:54 | INFO     | src/search_service.py:1720 | [新闻过滤] market:Tavily:stock_news: provider=Tavily, total=6, kept=0, drop_unknown=6, drop_old=0, drop_future=0, window=[2026-03-16,2026-03-19]
+2026-03-18 00:37:54 | INFO     | src/search_service.py:1821 | Tavily 搜索成功但过滤后无有效新闻，继续尝试下一引擎
+2026-03-18 00:37:54 | INFO     | src/market_analyzer.py:271 | [大盘] 共获取 1 条市场新闻
+2026-03-18 00:37:54 | INFO     | src/market_analyzer.py:296 | [大盘] 调用大模型生成复盘报告...
+2026-03-18 00:37:54 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:3932 | 
+LiteLLM completion() model= gemini-3-flash-preview; provider = gemini
+2026-03-18 00:37:54 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/llms/vertex_ai/gemini/vertex_and_google_ai_studio_gemini.py:1007 | Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-3-flash-preview) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+2026-03-18 00:38:04 | INFO     | /opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/litellm/utils.py:1656 | Wrapper: Completed Call, calling success_handler
+2026-03-18 00:38:04 | INFO     | src/market_analyzer.py:301 | [大盘] 复盘报告生成成功，长度: 900 字符
+2026-03-18 00:38:04 | INFO     | src/market_analyzer.py:691 | ========== 大盘复盘分析完成 ==========
+2026-03-18 00:38:04 | INFO     | src/notification.py:1655 | 日报已保存到: /home/runner/work/daily_stock_analysis/daily_stock_analysis/reports/market_review_20260318.md
+2026-03-18 00:38:04 | INFO     | src/core/market_review.py:97 | 大盘复盘报告已保存: /home/runner/work/daily_stock_analysis/daily_stock_analysis/reports/market_review_20260318.md
+2026-03-18 00:38:04 | INFO     | src/notification.py:1559 | 正在向 1 个渠道发送通知：邮件
+2026-03-18 00:38:04 | INFO     | src/notification_sender/email_sender.py:182 | 自动识别邮箱类型: qq.com -> smtp.qq.com:465
+2026-03-18 00:38:07 | INFO     | src/notification_sender/email_sender.py:202 | 邮件发送成功，收件人: ['1940344890@qq.com']
+2026-03-18 00:38:07 | INFO     | src/notification.py:1622 | 通知发送完成：成功 1 个，失败 0 个
+2026-03-18 00:38:07 | INFO     | src/core/market_review.py:108 | 大盘复盘推送成功
+2026-03-18 00:38:07 | INFO     | main.py:372 | 
+===== 分析结果摘要 =====
+2026-03-18 00:38:07 | INFO     | main.py:375 | 🟢 大中矿业(001203): 买入 | 评分 72 | 看多
+2026-03-18 00:38:07 | INFO     | main.py:375 | ⚪ 东方精工(002611): 观望 | 评分 45 | 震荡
+2026-03-18 00:38:07 | INFO     | main.py:375 | ⚪ 广和通(300638): 观望/减仓 | 评分 36 | 看空
+2026-03-18 00:38:07 | INFO     | main.py:375 | ⚪ *ST大立(002214): 观望 | 评分 35 | 看空
+2026-03-18 00:38:07 | INFO     | main.py:375 | ⚪ 特变电工(600089): 观望 | 评分 35 | 看空
+2026-03-18 00:38:07 | INFO     | main.py:375 | ⚪ 金沃股份(300984): 观望 | 评分 32 | 看空
+2026-03-18 00:38:07 | INFO     | main.py:375 | ⚪ 兴森科技(002436): 观望/卖出 | 评分 32 | 强烈看空
+2026-03-18 00:38:07 | INFO     | main.py:380 | 
+任务执行完成
+2026-03-18 00:38:08 | INFO     | main.py:426 | 开始自动回测...
+2026-03-18 00:38:08 | INFO     | main.py:434 | 自动回测完成: processed=0 saved=0 completed=0 insufficient=0 errors=0
+2026-03-18 00:38:08 | INFO     | main.py:697 | 
+程序执行完成

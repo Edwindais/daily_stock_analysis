@@ -546,6 +546,24 @@ class GeminiAnalyzer:
 - 强势趋势股（多头排列且趋势强度高、量能配合）可适当放宽乖离率要求
 - 此类股票可轻仓追踪，但仍需设置止损，不盲目追高
 
+### 8. A股风格分类（先分类，再决策）
+- 先判断标的更接近：**普通趋势股 / 题材动量股 / 事件驱动股 / ST风险股**
+- 普通趋势股：严格执行均线与乖离率纪律
+- 题材动量股：只有在**热点板块、资金流入、龙虎榜/涨停驱动**共振时，才可有限放宽追高限制，并明确“轻仓试错 + 明确止损”
+- 事件驱动股：优先看公告、合同、订单、业绩预告等催化，不得只靠均线下结论
+- ST / *ST：默认高风险，不能按普通成长股或价值股处理
+
+### 9. 资金与估值联合判断
+- 不能只用单一 PE 高低直接否定成长股 / 题材股
+- 需要结合：业绩增速、资金承接、所属板块热度、龙虎榜 / 主力资金行为
+- 若主力资金持续流出、板块退潮、龙虎榜游资博弈过热，要在风险点中明确提示
+
+### 10. 证据质量约束
+- `risk_alerts` / `positive_catalysts` 只能引用**该股票自身**的消息、公告或结构化数据
+- 行情页、报价页、股票中心页、泛行业报告，**不能**当作个股事件证据
+- 同名或相似简称但股票代码不一致的资讯，一律忽略
+- 若证据不足，明确写“暂无足够事件证据”，禁止脑补
+
 ## 输出格式：决策仪表盘 JSON
 
 请严格按照以下 JSON 格式输出，这是一个完整的【决策仪表盘】：
@@ -1118,18 +1136,149 @@ class GeminiAnalyzer:
 | 60日涨跌幅 | {rt.get('change_60d', 'N/A')}% | 中期表现 |
 """
 
-        # 添加财报与分红（价值投资口径）
         fundamental_context = context.get("fundamental_context") if isinstance(context, dict) else None
+        valuation_block = (
+            fundamental_context.get("valuation", {})
+            if isinstance(fundamental_context, dict)
+            else {}
+        )
+        growth_block = (
+            fundamental_context.get("growth", {})
+            if isinstance(fundamental_context, dict)
+            else {}
+        )
         earnings_block = (
             fundamental_context.get("earnings", {})
             if isinstance(fundamental_context, dict)
             else {}
         )
+        capital_flow_block = (
+            fundamental_context.get("capital_flow", {})
+            if isinstance(fundamental_context, dict)
+            else {}
+        )
+        dragon_tiger_block = (
+            fundamental_context.get("dragon_tiger", {})
+            if isinstance(fundamental_context, dict)
+            else {}
+        )
+        boards_block = (
+            fundamental_context.get("boards", {})
+            if isinstance(fundamental_context, dict)
+            else {}
+        )
+        valuation_data = valuation_block.get("data", {}) if isinstance(valuation_block, dict) else {}
+        growth_data = growth_block.get("data", {}) if isinstance(growth_block, dict) else {}
         earnings_data = (
             earnings_block.get("data", {})
             if isinstance(earnings_block, dict)
             else {}
         )
+        capital_flow_data = (
+            capital_flow_block.get("data", {})
+            if isinstance(capital_flow_block, dict)
+            else {}
+        )
+        dragon_tiger_data = (
+            dragon_tiger_block.get("data", {})
+            if isinstance(dragon_tiger_block, dict)
+            else {}
+        )
+        boards_data = (
+            boards_block.get("data", {})
+            if isinstance(boards_block, dict)
+            else {}
+        )
+        belong_boards = context.get("belong_boards", [])
+
+        if isinstance(valuation_data, dict) or isinstance(growth_data, dict):
+            valuation_data = valuation_data if isinstance(valuation_data, dict) else {}
+            growth_data = growth_data if isinstance(growth_data, dict) else {}
+            prompt += f"""
+### 估值与成长概览（A股判断补充）
+| 指标 | 数值 | 说明 |
+|------|------|------|
+| PE | {valuation_data.get('pe_ratio', 'N/A')} | 仅作参考，不得单独否定成长/题材逻辑 |
+| PB | {valuation_data.get('pb_ratio', 'N/A')} | |
+| 营收同比 | {growth_data.get('revenue_yoy', 'N/A')} | |
+| 归母净利同比 | {growth_data.get('net_profit_yoy', 'N/A')} | |
+| 毛利率 | {growth_data.get('gross_margin', 'N/A')} | |
+| ROE | {growth_data.get('roe', 'N/A')} | |
+
+> 对成长股、题材股，禁止只因 PE 偏高就直接否定，必须结合增速、催化、资金承接共同判断。
+"""
+
+        if belong_boards:
+            board_names = "、".join(
+                item.get("name", "") for item in belong_boards[:6] if isinstance(item, dict) and item.get("name")
+            ) or "N/A"
+            prompt += f"""
+### 个股所属板块 / 概念
+- 所属板块：{board_names}
+
+> 请先判断该股更接近普通趋势股、题材动量股、事件驱动股还是 ST 风险股，再决定是否放宽追高标准。
+"""
+
+        if isinstance(capital_flow_data, dict):
+            stock_flow = capital_flow_data.get("stock_flow", {}) if isinstance(capital_flow_data.get("stock_flow"), dict) else {}
+            sector_rankings = capital_flow_data.get("sector_rankings", {}) if isinstance(capital_flow_data.get("sector_rankings"), dict) else {}
+            top_sector_text = "、".join(
+                f"{item.get('name')}({self._format_amount(item.get('net_inflow'))})"
+                for item in sector_rankings.get("top", [])[:3]
+                if isinstance(item, dict) and item.get("name")
+            ) or "N/A"
+            bottom_sector_text = "、".join(
+                f"{item.get('name')}({self._format_amount(item.get('net_inflow'))})"
+                for item in sector_rankings.get("bottom", [])[:3]
+                if isinstance(item, dict) and item.get("name")
+            ) or "N/A"
+            prompt += f"""
+### 资金流与板块资金
+| 指标 | 数值 | 说明 |
+|------|------|------|
+| 主力净流入 | {self._format_amount(stock_flow.get('main_net_inflow'))} | 个股资金面 |
+| 5日净流入 | {self._format_amount(stock_flow.get('inflow_5d'))} | |
+| 10日净流入 | {self._format_amount(stock_flow.get('inflow_10d'))} | |
+| 资金流入居前板块 | {top_sector_text} | |
+| 资金流出居前板块 | {bottom_sector_text} | |
+
+> 若个股资金持续流出、所属板块不在资金流入前列，请不要机械给出进攻型结论。
+"""
+
+        if isinstance(dragon_tiger_data, dict):
+            prompt += f"""
+### 龙虎榜活跃度
+| 指标 | 数值 | 说明 |
+|------|------|------|
+| 近20日是否上榜 | {'是' if dragon_tiger_data.get('is_on_list') else '否'} | |
+| 近20日上榜次数 | {dragon_tiger_data.get('recent_count', 'N/A')} | |
+| 最近上榜日期 | {dragon_tiger_data.get('latest_date', 'N/A')} | |
+
+> 若上榜频繁，请区分“题材动量博弈”与“普通趋势股”，并在仓位建议中体现更严格风控。
+"""
+
+        if isinstance(boards_data, dict):
+            top_boards = boards_data.get("top", []) if isinstance(boards_data.get("top"), list) else []
+            bottom_boards = boards_data.get("bottom", []) if isinstance(boards_data.get("bottom"), list) else []
+            top_board_text = "、".join(
+                f"{item.get('name')}({item.get('change_pct', 'N/A')})"
+                for item in top_boards[:5]
+                if isinstance(item, dict) and item.get("name")
+            ) or "N/A"
+            bottom_board_text = "、".join(
+                f"{item.get('name')}({item.get('change_pct', 'N/A')})"
+                for item in bottom_boards[:5]
+                if isinstance(item, dict) and item.get("name")
+            ) or "N/A"
+            prompt += f"""
+### 市场板块强弱
+- 领涨板块：{top_board_text}
+- 领跌板块：{bottom_board_text}
+
+> 判断题材股时，请结合板块强弱，不要只根据个股均线做孤立判断。
+"""
+
+        # 添加财报与分红（价值投资口径）
         financial_report = (
             earnings_data.get("financial_report", {})
             if isinstance(earnings_data, dict)
@@ -1182,6 +1331,8 @@ class GeminiAnalyzer:
         if 'trend_analysis' in context:
             trend = context['trend_analysis']
             bias_warning = "🚨 超过5%，严禁追高！" if trend.get('bias_ma5', 0) > 5 else "✅ 安全范围"
+            support_level = (trend.get('support_levels') or ['N/A'])[0]
+            resistance_level = (trend.get('resistance_levels') or ['N/A'])[0]
             prompt += f"""
 ### 趋势分析预判（基于交易理念）
 | 指标 | 数值 | 判定 |
@@ -1189,11 +1340,24 @@ class GeminiAnalyzer:
 | 趋势状态 | {trend.get('trend_status', '未知')} | |
 | 均线排列 | {trend.get('ma_alignment', '未知')} | MA5>MA10>MA20为多头 |
 | 趋势强度 | {trend.get('trend_strength', 0)}/100 | |
+| MA60 | {trend.get('ma60', 'N/A')} | 中期牛熊分界 |
 | **乖离率(MA5)** | **{trend.get('bias_ma5', 0):+.2f}%** | {bias_warning} |
 | 乖离率(MA10) | {trend.get('bias_ma10', 0):+.2f}% | |
+| 乖离率(MA20) | {trend.get('bias_ma20', 0):+.2f}% | |
 | 量能状态 | {trend.get('volume_status', '未知')} | {trend.get('volume_trend', '')} |
+| 5日量比 | {trend.get('volume_ratio_5d', 'N/A')} | |
+| 支撑位 | {support_level} | |
+| 压力位 | {resistance_level} | |
 | 系统信号 | {trend.get('buy_signal', '未知')} | |
 | 系统评分 | {trend.get('signal_score', 0)}/100 | |
+
+### 动量与强弱补充
+| 指标 | 数值 | 判定 |
+|------|------|------|
+| MACD状态 | {trend.get('macd_status', '未知')} | {trend.get('macd_signal', '')} |
+| MACD DIF / DEA | {trend.get('macd_dif', 'N/A')} / {trend.get('macd_dea', 'N/A')} | |
+| RSI状态 | {trend.get('rsi_status', '未知')} | {trend.get('rsi_signal', '')} |
+| RSI(6/12/24) | {trend.get('rsi_6', 'N/A')} / {trend.get('rsi_12', 'N/A')} / {trend.get('rsi_24', 'N/A')} | |
 
 #### 系统分析理由
 **买入理由**：
@@ -1244,6 +1408,10 @@ class GeminiAnalyzer:
    - 输出到 `risk_alerts` / `positive_catalysts` / `latest_news` 的每一条都必须带具体日期（YYYY-MM-DD）
    - 超出近{news_window_days}日窗口的新闻一律忽略
    - 时间未知、无法确定发布日期的新闻一律忽略
+5. 🧹 **证据质量规则（强制）**：
+   - 只能引用与 **{stock_name}({code})** 本身直接相关的消息
+   - 同名或相似简称但代码不一致的资讯一律忽略
+   - 行情页、报价页、股票中心页、泛行业报告一律不得当作事件新闻引用
 
 ```
 {news_context}
@@ -1291,6 +1459,8 @@ class GeminiAnalyzer:
 3. ❓ 量能是否配合（缩量回调/放量突破）？
 4. ❓ 筹码结构是否健康？
 5. ❓ 消息面有无重大利空？（减持、处罚、业绩变脸等）
+6. ❓ 这只票更像普通趋势股、题材动量股、事件驱动股还是 ST 风险股？
+7. ❓ 资金流、龙虎榜、所属板块是否支持当前判断？
 
 ### 决策仪表盘要求：
 - **股票名称**：必须输出正确的中文全称（如"贵州茅台"而非"股票600519"）
@@ -1299,6 +1469,8 @@ class GeminiAnalyzer:
 - **具体狙击点位**：买入价、止损价、目标价（精确到分）
 - **检查清单**：每项用 ✅/⚠️/❌ 标记
 - **消息面时间合规**：`latest_news`、`risk_alerts`、`positive_catalysts` 不得包含超出近{news_window_days}日或时间未知的信息
+- **A股风格适配**：普通趋势股严格执行 5% 乖离率；题材动量股只有在热点板块、资金承接、龙虎榜活跃共振时才可有限放宽，并必须提示轻仓和止损
+- **证据优先级**：优先使用结构化数据（资金流、龙虎榜、板块、财报），再使用新闻摘要；若证据不足请明确说明
 
 请输出完整的 JSON 格式决策仪表盘。"""
         

@@ -269,6 +269,19 @@ class StockAnalysisPipeline:
             except Exception as e:
                 logger.debug(f"{stock_name}({code}) 基本面快照写入失败: {e}")
 
+            belong_boards: List[Dict[str, Any]] = []
+            try:
+                belong_boards = self.fetcher_manager.get_belong_boards(code)
+                if belong_boards:
+                    logger.info(
+                        "%s(%s) 所属板块: %s",
+                        stock_name,
+                        code,
+                        ",".join(item.get("name", "") for item in belong_boards[:5] if item.get("name")),
+                    )
+            except Exception as e:
+                logger.warning(f"{stock_name}({code}) 获取所属板块失败: {e}")
+
             # Step 3: 趋势分析（基于交易理念）— 在 Agent 分支之前执行，供两条路径共用
             trend_result: Optional[TrendAnalysisResult] = None
             try:
@@ -373,6 +386,7 @@ class StockAnalysisPipeline:
                 trend_result,
                 stock_name,  # 传入股票名称
                 fundamental_context,
+                belong_boards,
             )
             
             # Step 7: 调用 AI 分析（传入增强的上下文和新闻）
@@ -427,7 +441,8 @@ class StockAnalysisPipeline:
         chip_data: Optional[ChipDistribution],
         trend_result: Optional[TrendAnalysisResult],
         stock_name: str = "",
-        fundamental_context: Optional[Dict[str, Any]] = None
+        fundamental_context: Optional[Dict[str, Any]] = None,
+        belong_boards: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """
         增强分析上下文
@@ -493,15 +508,33 @@ class StockAnalysisPipeline:
                 'trend_status': trend_result.trend_status.value,
                 'ma_alignment': trend_result.ma_alignment,
                 'trend_strength': trend_result.trend_strength,
+                'ma60': trend_result.ma60,
                 'bias_ma5': trend_result.bias_ma5,
                 'bias_ma10': trend_result.bias_ma10,
+                'bias_ma20': trend_result.bias_ma20,
                 'volume_status': trend_result.volume_status.value,
+                'volume_ratio_5d': trend_result.volume_ratio_5d,
                 'volume_trend': trend_result.volume_trend,
                 'buy_signal': trend_result.buy_signal.value,
                 'signal_score': trend_result.signal_score,
                 'signal_reasons': trend_result.signal_reasons,
                 'risk_factors': trend_result.risk_factors,
+                'support_levels': trend_result.support_levels,
+                'resistance_levels': trend_result.resistance_levels,
+                'macd_status': trend_result.macd_status.value,
+                'macd_signal': trend_result.macd_signal,
+                'macd_dif': trend_result.macd_dif,
+                'macd_dea': trend_result.macd_dea,
+                'macd_bar': trend_result.macd_bar,
+                'rsi_status': trend_result.rsi_status.value,
+                'rsi_signal': trend_result.rsi_signal,
+                'rsi_6': trend_result.rsi_6,
+                'rsi_12': trend_result.rsi_12,
+                'rsi_24': trend_result.rsi_24,
             }
+
+        if belong_boards:
+            enhanced["belong_boards"] = belong_boards
 
         # Issue #234: Override today with realtime OHLC + trend MA for intraday analysis
         # Guard: trend_result.ma5 > 0 ensures MA calculation succeeded (data sufficient)

@@ -177,6 +177,41 @@ class SearchNewsFreshnessTestCase(unittest.TestCase):
         for resp in intel.values():
             self.assertTrue(all(item.title != "old" for item in resp.results))
 
+    def test_search_stock_news_filters_quote_pages_and_irrelevant_results(self) -> None:
+        today = datetime.now().date().isoformat()
+        service, _ = self._create_service_with_mock_provider(
+            news_max_age_days=7,
+            news_strategy_profile="medium",
+            response=_response(
+                [
+                    SearchResult(
+                        title="贵州茅台股票价格_行情_走势图-东方财富网",
+                        snippet="报价页",
+                        url="https://quote.eastmoney.com/sh600519.html",
+                        source="东方财富网",
+                        published_date=today,
+                    ),
+                    SearchResult(
+                        title="*ST天微收到监管函",
+                        snippet="688511 公告",
+                        url="https://example.com/st-tianwei",
+                        source="example.com",
+                        published_date=today,
+                    ),
+                    SearchResult(
+                        title="贵州茅台发布回购进展公告",
+                        snippet="600519 公司公告",
+                        url="https://example.com/moutai",
+                        source="example.com",
+                        published_date=today,
+                    ),
+                ]
+            ),
+        )
+
+        resp = service.search_stock_news("600519", "贵州茅台", max_results=5)
+        self.assertEqual([item.title for item in resp.results], ["贵州茅台发布回购进展公告"])
+
     def test_effective_window_helper_has_no_side_effect(self) -> None:
         """_effective_news_window_days should not mutate stored news_window_days."""
         service, _ = self._create_service_with_mock_provider(
