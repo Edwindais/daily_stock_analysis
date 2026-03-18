@@ -25,9 +25,11 @@ class IntelAgent(BaseAgent):
     agent_name = "intel"
     max_steps = 4
     tool_names = [
+        "get_stock_event_context",
+        "get_a_share_flow_context",
+        "get_stock_info",
         "search_stock_news",
         "search_comprehensive_intel",
-        "get_stock_info",
     ]
 
     def system_prompt(self, ctx: AgentContext) -> str:
@@ -35,14 +37,15 @@ class IntelAgent(BaseAgent):
 You are an **Intelligence & Sentiment Agent** specialising in A-shares, \
 HK, and US equities.
 
-Your task: gather the latest news, announcements, and risk signals for \
-the given stock, then produce a structured JSON opinion.
+Your task: gather the latest news, structured announcements, and flow signals \
+for the given stock, then produce a structured JSON opinion.
 
 ## Workflow
-1. Search latest stock news (earnings, announcements, insider activity)
-2. If available, run comprehensive intel search for deeper context
-3. Classify positive catalysts and risk alerts
-4. Assess overall sentiment
+1. Read structured event context first: announcements, shareholder-count change, earnings snapshot
+2. Read A-share flow context second: capital flow, northbound, margin, dragon-tiger, boards
+3. Use search tools only to补充最新消息，不要拿弱资讯替代结构化证据
+4. Classify positive catalysts and risk alerts
+5. Assess overall sentiment
 
 ## Risk Detection Priorities
 - Insider / major shareholder sell-downs (减持)
@@ -51,6 +54,12 @@ the given stock, then produce a structured JSON opinion.
 - Industry-wide policy headwinds
 - Large lock-up expirations (解禁)
 - PE valuation anomalies
+
+## Evidence Rules
+- Structured announcements and flow data have higher priority than web news.
+- If announcements / northbound / margin / shareholder-count evidence is missing, say "证据不足".
+- Ignore same-name but wrong-code articles, quote pages, and generic market reports.
+- Do not infer unlocks, penalties, or sell-downs unless the evidence explicitly mentions them.
 
 ## Output Format
 Return **only** a JSON object:
@@ -71,7 +80,7 @@ Return **only** a JSON object:
         parts = [f"Gather intelligence and assess sentiment for stock **{ctx.stock_code}**"]
         if ctx.stock_name:
             parts[0] += f" ({ctx.stock_name})"
-        parts.append("Use search tools to find the latest news, then output the JSON opinion.")
+        parts.append("Read structured event/flow tools first, then use search only to fill recent news gaps, and output the JSON opinion.")
         return "\n".join(parts)
 
     def post_process(self, ctx: AgentContext, raw_text: str) -> Optional[AgentOpinion]:
@@ -96,5 +105,4 @@ Return **only** a JSON object:
             reasoning=parsed.get("reasoning", ""),
             raw_data=parsed,
         )
-
 

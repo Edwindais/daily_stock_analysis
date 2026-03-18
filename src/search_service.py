@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Set, Tuple
 from itertools import cycle
 import requests
 from newspaper import Article, Config
@@ -1741,6 +1741,65 @@ class SearchService:
             return True
         return False
 
+    @staticmethod
+    def _normalize_result_url(url: str) -> str:
+        text = str(url or "").strip().lower()
+        if not text:
+            return ""
+        text = text.split("#", 1)[0].split("?", 1)[0]
+        return text.rstrip("/")
+
+    @classmethod
+    def _result_dedupe_key(cls, item: SearchResult) -> str:
+        normalized_url = cls._normalize_result_url(item.url)
+        if normalized_url:
+            return f"url:{normalized_url}"
+        title = re.sub(r"\s+", "", str(item.title or "").strip().lower())
+        source = re.sub(r"\s+", "", str(item.source or "").strip().lower())
+        published = str(item.published_date or "").strip()
+        return f"title:{title}|source:{source}|date:{published}"
+
+    @classmethod
+    def _dedupe_results(
+        cls,
+        results: List[SearchResult],
+        max_results: int,
+        seen_keys: Optional[Set[str]] = None,
+    ) -> List[SearchResult]:
+        deduped: List[SearchResult] = []
+        shared_seen = seen_keys if seen_keys is not None else set()
+        local_seen: Set[str] = set()
+
+        for item in results:
+            key = cls._result_dedupe_key(item)
+            if key in local_seen or key in shared_seen:
+                continue
+            local_seen.add(key)
+            shared_seen.add(key)
+            deduped.append(item)
+            if len(deduped) >= max_results:
+                break
+        return deduped
+
+    @staticmethod
+    def _provider_sort_key(provider: BaseSearchProvider, is_cn_stock: bool) -> Tuple[int, str]:
+        name = (provider.name or "").lower()
+        if is_cn_stock and "tavily" in name:
+            return (1, name)
+        return (0, name)
+
+    def _iter_preferred_providers(self, stock_code: str) -> List[BaseSearchProvider]:
+        """Return available providers with Tavily deprioritised for A-shares."""
+        available = [provider for provider in self._providers if provider.is_available]
+        is_cn_stock = not self._is_foreign_stock(stock_code)
+        return sorted(available, key=lambda provider: self._provider_sort_key(provider, is_cn_stock))
+
+    def _provider_results_missing_dates(self, response: SearchResponse) -> bool:
+        """True when provider returned rows but every row lacks a parsable date."""
+        if not response.success or not response.results:
+            return False
+        return all(self._normalize_news_publish_date(item.published_date) is None for item in response.results)
+
     def _filter_news_response(
         self,
         response: SearchResponse,
@@ -1812,6 +1871,8 @@ class SearchService:
                 latest.isoformat(),
             )
 
+        filtered = self._dedupe_results(filtered, max_results=max_results)
+
         return SearchResponse(
             query=response.query,
             results=filtered,
@@ -1881,10 +1942,7 @@ class SearchService:
 
         # 依次尝试各个搜索引擎（若过滤后为空，继续尝试下一引擎）
         had_provider_success = False
-        for provider in self._providers:
-            if not provider.is_available:
-                continue
-            
+        for provider in self._iter_preferred_providers(stock_code):
             response = provider.search(query, provider_max_results, days=search_days)
             filtered_response = self._filter_news_response(
                 response,
@@ -1901,6 +1959,11 @@ class SearchService:
                 self._put_cache(cache_key, filtered_response)
                 return filtered_response
             else:
+                if (
+                    not self._is_foreign_stock(stock_code)
+                    and self._provider_results_missing_dates(response)
+                ):
+                    logger.info("%s 返回结果缺少可用日期，A股场景继续降级到下一引擎", provider.name)
                 if response.success and not filtered_response.results:
                     logger.info(
                         "%s 搜索成功但过滤后无有效新闻，继续尝试下一引擎",
@@ -2062,50 +2125,93 @@ class SearchService:
         )
         
         # 轮流使用不同的搜索引擎
-        provider_index = 0
+        seen_news_keys: Set[str] = set()
+        muted_providers: Set[str] = set()
         
         for dim in search_dimensions:
             if search_count >= max_searches:
                 break
-            
-            # 选择搜索引擎（轮流使用）
-            available_providers = [p for p in self._providers if p.is_available]
+
+            available_providers = [
+                provider
+                for provider in self._iter_preferred_providers(stock_code)
+                if provider.name not in muted_providers
+            ]
             if not available_providers:
                 break
-            
-            provider = available_providers[provider_index % len(available_providers)]
-            provider_index += 1
-            
-            logger.info(f"[情报搜索] {dim['desc']}: 使用 {provider.name}")
-            
-            response = provider.search(
-                dim['query'],
-                max_results=provider_max_results,
-                days=search_days,
-            )
-            filtered_response = self._filter_news_response(
-                response,
-                search_days=search_days,
-                max_results=target_per_dimension,
-                log_scope=f"{stock_code}:{provider.name}:{dim['name']}",
-                stock_code=stock_code,
-                stock_name=stock_name,
-            )
-            results[dim['name']] = filtered_response
-            search_count += 1
-            
-            if response.success:
-                logger.info(
-                    "[情报搜索] %s: 原始=%s条, 过滤后=%s条",
-                    dim['desc'],
-                    len(response.results),
-                    len(filtered_response.results),
+
+            selected_response: Optional[SearchResponse] = None
+            fallback_response: Optional[SearchResponse] = None
+
+            for provider in available_providers:
+                logger.info(f"[情报搜索] {dim['desc']}: 使用 {provider.name}")
+
+                response = provider.search(
+                    dim['query'],
+                    max_results=provider_max_results,
+                    days=search_days,
                 )
+                filtered_response = self._filter_news_response(
+                    response,
+                    search_days=search_days,
+                    max_results=target_per_dimension,
+                    log_scope=f"{stock_code}:{provider.name}:{dim['name']}",
+                    stock_code=stock_code,
+                    stock_name=stock_name,
+                )
+                filtered_response = SearchResponse(
+                    query=filtered_response.query,
+                    results=self._dedupe_results(
+                        filtered_response.results,
+                        max_results=target_per_dimension,
+                        seen_keys=seen_news_keys,
+                    ),
+                    provider=filtered_response.provider,
+                    success=filtered_response.success,
+                    error_message=filtered_response.error_message,
+                    search_time=filtered_response.search_time,
+                )
+                fallback_response = filtered_response
+                search_count += 1
+
+                if response.success:
+                    logger.info(
+                        "[情报搜索] %s: 原始=%s条, 过滤后=%s条",
+                        dim['desc'],
+                        len(response.results),
+                        len(filtered_response.results),
+                    )
+                else:
+                    logger.warning(f"[情报搜索] {dim['desc']}: 搜索失败 - {response.error_message}")
+
+                if (
+                    not is_foreign
+                    and "tavily" in (provider.name or "").lower()
+                    and self._provider_results_missing_dates(response)
+                ):
+                    muted_providers.add(provider.name)
+                    logger.info("[情报搜索] %s: 日期字段缺失，A股剩余维度不再重复使用该引擎", provider.name)
+
+                if filtered_response.success and filtered_response.results:
+                    selected_response = filtered_response
+                    break
+
+                time.sleep(0.2)
+
+            if selected_response is not None:
+                results[dim['name']] = selected_response
+            elif fallback_response is not None:
+                results[dim['name']] = fallback_response
             else:
-                logger.warning(f"[情报搜索] {dim['desc']}: 搜索失败 - {response.error_message}")
-            
-            # 短暂延迟避免请求过快
-            time.sleep(0.5)
+                results[dim['name']] = SearchResponse(
+                    query=dim['query'],
+                    results=[],
+                    provider="None",
+                    success=False,
+                    error_message="所有搜索引擎都不可用或搜索失败",
+                )
+
+            time.sleep(0.3)
         
         return results
     

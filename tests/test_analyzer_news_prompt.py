@@ -125,6 +125,17 @@ class AnalyzerNewsPromptTestCase(unittest.TestCase):
                     }
                 },
                 "earnings": {"data": {}},
+                "announcements": {
+                    "status": "ok",
+                    "data": {
+                        "events": [
+                            {"date": "2026-03-17", "category": "contract_order", "title": "中标军工项目"},
+                        ]
+                    },
+                },
+                "northbound": {"status": "ok", "data": {"net_buy_direction": "净买入", "change_shares_5d": 12345, "holding_ratio_float": 1.23}},
+                "margin": {"status": "ok", "data": {"direction": "明显加杠杆", "balance_change_pct": 5.2, "financing_balance": 123456789}},
+                "shareholder_count": {"status": "partial", "data": {}},
             },
         }
 
@@ -140,8 +151,64 @@ class AnalyzerNewsPromptTestCase(unittest.TestCase):
         self.assertIn("个股所属板块 / 概念", prompt)
         self.assertIn("MACD状态", prompt)
         self.assertIn("RSI状态", prompt)
-        self.assertIn("题材动量股", prompt)
+        self.assertIn("sector_momentum", prompt)
+        self.assertIn("结构化公告 / 公司事件", prompt)
+        self.assertIn("增量资金 / 杠杆 / 筹码分散度", prompt)
+        self.assertIn("股东户数：数据缺失/抓取失败，必须写“证据不足”", prompt)
         self.assertIn("同名或相似简称但代码不一致的资讯一律忽略", prompt)
+
+    def test_prompt_marks_missing_chip_and_structured_blocks_as_insufficient(self) -> None:
+        with patch.object(GeminiAnalyzer, "_init_litellm", return_value=None):
+            analyzer = GeminiAnalyzer()
+
+        context = {
+            "code": "600519",
+            "stock_name": "贵州茅台",
+            "date": "2026-03-18",
+            "today": {},
+            "fundamental_context": {
+                "announcements": {"status": "failed", "data": {}},
+                "northbound": {"status": "failed", "data": {}},
+                "margin": {"status": "not_supported", "data": {}},
+                "shareholder_count": {"status": "partial", "data": {}},
+            },
+        }
+        fake_cfg = SimpleNamespace(news_max_age_days=7, news_strategy_profile="medium")
+        with patch("src.analyzer.get_config", return_value=fake_cfg):
+            prompt = analyzer._format_prompt(context, "贵州茅台", news_context=None)
+
+        self.assertIn("筹码分布：数据缺失/抓取失败", prompt)
+        self.assertIn("公告事件：数据缺失/抓取失败，必须写“证据不足”", prompt)
+        self.assertIn("北向持仓：数据缺失/抓取失败，必须写“证据不足”", prompt)
+        self.assertIn("融资融券：当前标的不支持", prompt)
+        self.assertIn("缺失数据处理", prompt)
+
+    def test_market_snapshot_prefers_daily_snapshot_and_recomputes_pct(self) -> None:
+        with patch.object(GeminiAnalyzer, "_init_litellm", return_value=None):
+            analyzer = GeminiAnalyzer()
+
+        snapshot = analyzer._build_market_snapshot(
+            {
+                "date": "2026-03-18",
+                "daily_today_snapshot": {
+                    "open": 10.0,
+                    "high": 10.8,
+                    "low": 9.8,
+                    "close": 10.5,
+                    "pct_chg": 99.0,
+                    "volume": 100000,
+                    "amount": 1230000,
+                },
+                "daily_yesterday_snapshot": {"close": 10.0},
+                "realtime": {"price": 10.6, "turnover_rate": 3.2, "volume_ratio": 1.4},
+            }
+        )
+
+        self.assertEqual(snapshot["close"], "10.50")
+        self.assertEqual(snapshot["prev_close"], "10.00")
+        self.assertEqual(snapshot["pct_chg"], "5.00%")
+        self.assertEqual(snapshot["change_amount"], "0.50")
+        self.assertEqual(snapshot["price"], "10.60")
 
 
 if __name__ == "__main__":

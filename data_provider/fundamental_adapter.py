@@ -261,6 +261,99 @@ def _extract_latest_row(df: pd.DataFrame, stock_code: str) -> Optional[pd.Series
     return df.iloc[0]
 
 
+def _filter_df_by_code(df: pd.DataFrame, stock_code: str) -> pd.DataFrame:
+    """Return rows matching the target stock code."""
+    if df is None or df.empty:
+        return pd.DataFrame()
+
+    code_cols = [c for c in df.columns if any(k in str(c) for k in ("代码", "股票代码", "证券代码", "ts_code", "symbol"))]
+    if not code_cols:
+        return df.copy()
+
+    target = _normalize_code(stock_code)
+    for col in code_cols:
+        try:
+            series = df[col].astype(str).map(_normalize_code)
+            matched = df[series == target]
+            if not matched.empty:
+                return matched.copy()
+        except Exception:
+            continue
+    return pd.DataFrame()
+
+
+def _sort_df_by_date_desc(df: pd.DataFrame, candidate_keywords: List[str]) -> pd.DataFrame:
+    """Sort DataFrame by the first matching date-like column in descending order."""
+    if df is None or df.empty:
+        return pd.DataFrame()
+    for col in df.columns:
+        if not any(keyword in str(col) for keyword in candidate_keywords):
+            continue
+        work = df.copy()
+        try:
+            work[col] = pd.to_datetime(work[col], errors="coerce")
+            work = work.sort_values(by=col, ascending=False, na_position="last")
+            return work
+        except Exception:
+            continue
+    return df.copy()
+
+
+def _detect_a_share_exchange(stock_code: str) -> str:
+    """Best-effort A-share exchange detection: sh/sz/bj."""
+    normalized = _normalize_code(stock_code)
+    if normalized.startswith(("600", "601", "603", "605", "688", "689", "510", "511", "512", "513", "515", "518")):
+        return "sh"
+    if normalized.startswith(("000", "001", "002", "003", "159", "160", "161", "162", "163", "300", "301")):
+        return "sz"
+    if normalized.startswith(("4", "8", "92")):
+        return "bj"
+    return "unknown"
+
+
+def _normalize_flow_direction(delta_value: Optional[float], *, pct_threshold: float = 1.0) -> str:
+    """Convert a numeric change into a coarse trading-friendly direction label."""
+    if delta_value is None:
+        return "中性"
+    if delta_value >= pct_threshold:
+        return "明显加杠杆"
+    if delta_value <= -pct_threshold:
+        return "明显去杠杆"
+    return "中性"
+
+
+def _classify_shareholder_count(delta_pct: Optional[float]) -> str:
+    """Interpret shareholder-count change as chip concentration trend."""
+    if delta_pct is None:
+        return "中性"
+    if delta_pct <= -5:
+        return "筹码趋集"
+    if delta_pct >= 5:
+        return "筹码趋散"
+    return "中性"
+
+
+def _classify_announcement(announcement_type: str, title: str) -> Optional[str]:
+    """Map raw notice text to the stable event taxonomy used by the pipeline."""
+    blob = f"{announcement_type} {title}".strip()
+    if not blob:
+        return None
+
+    if any(keyword in blob for keyword in ("业绩", "快报", "年报", "季报", "半年报", "预告", "预增", "预亏", "利润分配")):
+        return "earnings"
+    if any(keyword in blob for keyword in ("减持", "增持", "持股变动", "权益变动", "回购")):
+        return "shareholder_change"
+    if any(keyword in blob for keyword in ("质押", "解除质押")):
+        return "pledge"
+    if any(keyword in blob for keyword in ("监管", "处罚", "立案", "问询", "关注函", "警示函", "纪律处分", "监管函")):
+        return "regulatory"
+    if any(keyword in blob for keyword in ("合同", "中标", "订单", "项目", "框架协议", "签署")):
+        return "contract_order"
+    if any(keyword in blob for keyword in ("解禁", "限售", "解除限售")):
+        return "lockup_unlock"
+    return None
+
+
 class AkshareFundamentalAdapter:
     """AkShare adapter for fundamentals, capital flow and dragon-tiger signals."""
 
@@ -529,4 +622,264 @@ class AkshareFundamentalAdapter:
         )
         result["status"] = "ok"
         result["source_chain"].append(f"dragon_tiger:{source}")
+        return result
+
+    def get_announcements(self, stock_code: str, lookback_days: int = 5, max_events: int = 5) -> Dict[str, Any]:
+        """Return recent company announcements with normalized event categories."""
+        result: Dict[str, Any] = {
+            "status": "not_supported",
+            "events": [],
+            "source_chain": [],
+            "errors": [],
+        }
+        try:
+            import akshare as ak
+        except Exception as exc:
+            result["errors"].append(f"import_akshare:{type(exc).__name__}")
+            return result
+
+        today = datetime.now().date()
+        seen = set()
+        events: List[Dict[str, Any]] = []
+
+        for offset in range(max(1, lookback_days)):
+            query_date = (today - timedelta(days=offset)).strftime("%Y%m%d")
+            try:
+                df = ak.stock_notice_report(symbol="全部", date=query_date)
+            except Exception as exc:
+                result["errors"].append(f"stock_notice_report:{query_date}:{type(exc).__name__}")
+                continue
+            if df is None or df.empty:
+                continue
+
+            filtered = _filter_df_by_code(df, stock_code)
+            if filtered.empty:
+                continue
+
+            for _, row in filtered.iterrows():
+                if not isinstance(row, pd.Series):
+                    continue
+                title = _safe_str(row.get("公告标题"))
+                announcement_type = _safe_str(row.get("公告类型"))
+                category = _classify_announcement(announcement_type, title)
+                if category is None:
+                    continue
+                publish_dt = _safe_datetime(row.get("公告日期"))
+                if publish_dt is None:
+                    continue
+                dedupe_key = (publish_dt.date().isoformat(), title)
+                if dedupe_key in seen:
+                    continue
+                seen.add(dedupe_key)
+                events.append(
+                    {
+                        "date": publish_dt.date().isoformat(),
+                        "title": title,
+                        "announcement_type": announcement_type or None,
+                        "category": category,
+                        "url": _safe_str(row.get("网址")) or None,
+                    }
+                )
+                if len(events) >= max_events:
+                    break
+            if len(events) >= max_events:
+                break
+
+        if events:
+            result["events"] = sorted(events, key=lambda item: item.get("date") or "", reverse=True)[:max_events]
+            result["status"] = "ok"
+            result["source_chain"].append("announcements:stock_notice_report")
+        elif result["errors"]:
+            result["status"] = "partial"
+        return result
+
+    def get_northbound_holdings(self, stock_code: str) -> Dict[str, Any]:
+        """Return northbound holding signal for SH/SZ connect eligible stocks."""
+        exchange = _detect_a_share_exchange(stock_code)
+        if exchange not in {"sh", "sz"}:
+            return {
+                "status": "not_supported",
+                "data": {},
+                "source_chain": [],
+                "errors": ["northbound not supported for exchange"],
+            }
+
+        market = "沪股通" if exchange == "sh" else "深股通"
+        result: Dict[str, Any] = {
+            "status": "not_supported",
+            "data": {},
+            "source_chain": [],
+            "errors": [],
+        }
+
+        df, source, errors = self._call_df_candidates([
+            ("stock_hsgt_hold_stock_em", {"market": market, "indicator": "5日排行"}),
+            ("stock_hsgt_hold_stock_em", {"market": market, "indicator": "10日排行"}),
+        ])
+        result["errors"].extend(errors)
+        if df is None or df.empty:
+            return result
+
+        filtered = _filter_df_by_code(df, stock_code)
+        if filtered.empty:
+            result["source_chain"].append(f"northbound:{source}")
+            result["status"] = "partial"
+            return result
+
+        row = filtered.iloc[0]
+        change_shares = _safe_float(row.get("5日增持估计-股数"))
+        change_value = _safe_float(row.get("5日增持估计-市值"))
+        change_pct = _safe_float(row.get("5日增持估计-市值增幅"))
+        hold_ratio = _safe_float(row.get("今日持股-占流通股比"))
+        result["data"] = {
+            "market": market,
+            "as_of": _normalize_report_date(row.get("日期")),
+            "holding_shares": _safe_float(row.get("今日持股-股数")),
+            "holding_value": _safe_float(row.get("今日持股-市值")),
+            "holding_ratio_float": hold_ratio,
+            "change_shares_5d": change_shares,
+            "change_value_5d": change_value,
+            "change_pct_5d": change_pct,
+            "net_buy_direction": "净买入" if (change_shares or 0) > 0 else ("净卖出" if (change_shares or 0) < 0 else "中性"),
+            "continuous_increase_5d": bool((change_shares or 0) > 0),
+            "board": _safe_str(row.get("所属板块")) or None,
+        }
+        result["status"] = "ok"
+        result["source_chain"].append(f"northbound:{source}")
+        return result
+
+    def get_margin_balance(self, stock_code: str, lookback_days: int = 7) -> Dict[str, Any]:
+        """Return margin financing / securities lending snapshot and direction."""
+        exchange = _detect_a_share_exchange(stock_code)
+        if exchange not in {"sh", "sz"}:
+            return {
+                "status": "not_supported",
+                "data": {},
+                "source_chain": [],
+                "errors": ["margin not supported for exchange"],
+            }
+
+        result: Dict[str, Any] = {
+            "status": "not_supported",
+            "data": {},
+            "source_chain": [],
+            "errors": [],
+        }
+
+        try:
+            import akshare as ak
+        except Exception as exc:
+            result["errors"].append(f"import_akshare:{type(exc).__name__}")
+            return result
+
+        fetch_fn = ak.stock_margin_detail_sse if exchange == "sh" else ak.stock_margin_detail_szse
+        current_row: Optional[pd.Series] = None
+        previous_row: Optional[pd.Series] = None
+        current_date: Optional[str] = None
+        previous_date: Optional[str] = None
+
+        for offset in range(max(1, lookback_days)):
+            query_date = (datetime.now().date() - timedelta(days=offset)).strftime("%Y%m%d")
+            try:
+                df = fetch_fn(date=query_date)
+            except Exception as exc:
+                result["errors"].append(f"margin:{query_date}:{type(exc).__name__}")
+                continue
+            if df is None or df.empty:
+                continue
+
+            filtered = _filter_df_by_code(df, stock_code)
+            if filtered.empty:
+                continue
+
+            row = filtered.iloc[0]
+            if current_row is None:
+                current_row = row
+                current_date = query_date
+            else:
+                previous_row = row
+                previous_date = query_date
+                break
+
+        if current_row is None:
+            return result
+
+        financing_balance = _safe_float(current_row.get("融资余额"))
+        securities_balance = _safe_float(current_row.get("融券余额"))
+        financing_buy = _safe_float(current_row.get("融资买入额"))
+        combined_balance = _safe_float(current_row.get("融资融券余额"))
+        if combined_balance is None and financing_balance is not None and securities_balance is not None:
+            combined_balance = financing_balance + securities_balance
+
+        financing_balance_prev = _safe_float(previous_row.get("融资余额")) if previous_row is not None else None
+        balance_change_pct = None
+        if financing_balance is not None and financing_balance_prev not in (None, 0):
+            balance_change_pct = round((financing_balance - financing_balance_prev) / financing_balance_prev * 100.0, 4)
+
+        result["data"] = {
+            "as_of": current_date,
+            "previous_as_of": previous_date,
+            "financing_balance": financing_balance,
+            "financing_buy_amount": financing_buy,
+            "securities_lending_balance": securities_balance,
+            "securities_lending_volume": _safe_float(current_row.get("融券余量")),
+            "combined_balance": combined_balance,
+            "balance_change_pct": balance_change_pct,
+            "direction": _normalize_flow_direction(balance_change_pct),
+        }
+        result["status"] = "ok"
+        result["source_chain"].append(f"margin:{fetch_fn.__name__}")
+        return result
+
+    def get_shareholder_count(self, stock_code: str) -> Dict[str, Any]:
+        """Return latest shareholder-count trend as a proxy for chip concentration."""
+        result: Dict[str, Any] = {
+            "status": "not_supported",
+            "data": {},
+            "source_chain": [],
+            "errors": [],
+        }
+
+        df, source, errors = self._call_df_candidates([
+            ("stock_zh_a_gdhs_detail_em", {"symbol": stock_code}),
+            ("stock_zh_a_gdhs_detail_em", {}),
+        ])
+        result["errors"].extend(errors)
+        if df is None or df.empty:
+            return result
+
+        filtered = _filter_df_by_code(df, stock_code)
+        if filtered.empty:
+            result["source_chain"].append(f"shareholder_count:{source}")
+            result["status"] = "partial"
+            return result
+
+        filtered = _sort_df_by_date_desc(filtered, ["公告日期", "统计截止日", "日期"])
+        latest = filtered.iloc[0]
+        previous = filtered.iloc[1] if len(filtered) > 1 else None
+
+        latest_count = _safe_float(latest.get("股东户数-本次"))
+        previous_count = _safe_float(latest.get("股东户数-上次"))
+        if previous_count is None and previous is not None:
+            previous_count = _safe_float(previous.get("股东户数-本次"))
+        delta = _safe_float(latest.get("股东户数-增减"))
+        delta_pct = _safe_float(latest.get("股东户数-增减比例"))
+        if delta is None and latest_count is not None and previous_count is not None:
+            delta = latest_count - previous_count
+        if delta_pct is None and latest_count is not None and previous_count not in (None, 0):
+            delta_pct = round((latest_count - previous_count) / previous_count * 100.0, 4)
+
+        result["data"] = {
+            "stat_date": _normalize_report_date(latest.get("股东户数统计截止日")),
+            "announcement_date": _normalize_report_date(latest.get("股东户数公告日期")),
+            "current_holder_count": latest_count,
+            "previous_holder_count": previous_count,
+            "delta": delta,
+            "delta_pct": delta_pct,
+            "avg_holding_market_value": _safe_float(latest.get("户均持股市值")),
+            "avg_holding_shares": _safe_float(latest.get("户均持股数量")),
+            "trend": _classify_shareholder_count(delta_pct),
+        }
+        result["status"] = "ok"
+        result["source_chain"].append(f"shareholder_count:{source}")
         return result

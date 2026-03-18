@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 🧠 **A 股分析上下文增强** — 主分析 Prompt 新增 MACD / RSI、个股所属板块、主力资金流、龙虎榜、板块强弱等上下文，减少仅靠均线与少量新闻做判断的偏差。
 - 🧹 **A 股新闻去噪加强** — 搜索结果在时间过滤之外，额外剔除行情页 / 报价页 / 股票中心页，并过滤明显不属于当前股票主体的噪音结果，降低 ST 同名前缀和资讯页污染。
 - 📰 **默认新闻窗口调整为 7 天** — `NEWS_STRATEGY_PROFILE` 默认改为 `medium`，`NEWS_MAX_AGE_DAYS` 默认改为 `7`，减少周末和公告滞后导致的个股上下文过薄。
+- 🧩 **第二轮 A 股准确性改造落地** — `fundamental_context` 新增 `announcements / northbound / margin / shareholder_count` 四个结构化块；Agent 新增 `get_stock_event_context / get_a_share_flow_context / get_market_breadth` 三个工具；策略新增 `event_driven / capital_flow_resonance / sector_rotation`；GitHub workflow 显式透传 Agent 与温度配置并打印有效值；缺失筹码数据统一显示为“数据缺失”，不再输出伪 `0.0`。
 
 ## [3.8.0] - 2026-03-17
 

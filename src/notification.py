@@ -20,7 +20,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from enum import Enum
 
 from src.config import get_config
-from src.analyzer import AnalysisResult
+from src.analyzer import AnalysisResult, format_chip_structure_summary
 from src.enums import ReportType
 from bot.models import BotMessage
 from src.utils.data_processing import normalize_model_used
@@ -940,10 +940,8 @@ class NotificationService(
                         ])
                     # 筹码结构
                     if chip_data:
-                        chip_health = chip_data.get('chip_health', 'N/A')
-                        chip_emoji = "✅" if chip_health == "健康" else ("⚠️" if chip_health == "一般" else "🚨")
                         report_lines.extend([
-                            f"**筹码**: 获利比例 {chip_data.get('profit_ratio', 'N/A')} | 平均成本 {chip_data.get('avg_cost', 'N/A')} | 集中度 {chip_data.get('concentration', 'N/A')} {chip_emoji}{chip_health}",
+                            f"**筹码**: {format_chip_structure_summary(chip_data)}",
                             "",
                         ])
                 

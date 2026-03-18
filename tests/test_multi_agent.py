@@ -319,6 +319,25 @@ class TestStrategyRouter(unittest.TestCase):
         regime = router._detect_regime(ctx)
         self.assertIsNone(regime)
 
+    def test_detect_regime_event_driven_from_recent_announcement(self):
+        from src.agent.strategies.router import StrategyRouter
+        router = StrategyRouter()
+        ctx = AgentContext()
+        ctx.set_data(
+            "fundamental_context",
+            {
+                "announcements": {
+                    "data": {
+                        "events": [
+                            {"date": "2026-03-17", "category": "contract_order", "title": "签署大单"},
+                        ]
+                    }
+                }
+            },
+        )
+        regime = router._detect_regime(ctx)
+        self.assertEqual(regime, "event_driven")
+
 
 # ============================================================
 # StrategyAggregator

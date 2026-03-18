@@ -1,0 +1,34 @@
+# Sector Rotation Strategy / 板块轮动
+# Focuses on whether the stock is aligned with the current hot sector regime.
+
+name: sector_rotation
+display_name: 板块轮动
+description: 结合市场广度、板块强弱和个股所属板块，判断是否处于可参与的轮动阶段。
+category: sector
+core_rules: [2, 3, 7]
+required_tools:
+  - get_market_breadth
+  - get_sector_rankings
+  - get_a_share_flow_context
+
+instructions: |
+  **板块轮动策略（Sector Rotation）**
+
+  核心逻辑：A 股常见的是板块驱动而不是单股独立上涨。先看市场是否支持轮动，再看个股是否站在风口上。
+
+  1. **市场是否支持进攻**
+     - 使用 `get_market_breadth`。
+     - 涨多跌少、涨停家数扩张、跌停家数受控时，轮动环境更友好。
+
+  2. **板块强弱**
+     - 使用 `get_sector_rankings` 和 `get_a_share_flow_context`。
+     - 个股所属板块若同时出现在领涨榜和资金流入榜，轮动概率更高。
+
+  3. **个股是否跟得上**
+     - 个股要明显强于所属板块平均表现，且换手不能过冷。
+     - 板块强、个股弱，通常不是优先目标。
+
+  评分调整建议：
+  - 市场广度改善 + 板块领涨 + 个股跟涨：`sentiment_score +12`
+  - 仅板块热但个股不跟：`sentiment_score +3`
+  - 市场退潮、板块分化加大：`sentiment_score -10`

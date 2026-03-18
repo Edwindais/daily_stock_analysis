@@ -13,6 +13,7 @@ No LLM calls — pure rule evaluation for speed and predictability.
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 from src.agent.protocols import AgentContext
@@ -26,7 +27,8 @@ _REGIME_STRATEGIES: Dict[str, List[str]] = {
     "trending_down": ["shrink_pullback", "bottom_volume"],
     "sideways": ["box_oscillation", "shrink_pullback"],
     "volatile": ["chan_theory", "wave_theory"],
-    "sector_hot": ["dragon_head", "emotion_cycle"],
+    "sector_hot": ["dragon_head", "capital_flow_resonance", "sector_rotation"],
+    "event_driven": ["event_driven", "capital_flow_resonance"],
 }
 
 # Fallback when regime can't be determined
@@ -87,6 +89,10 @@ class StrategyRouter:
 
     def _detect_regime(self, ctx: AgentContext) -> Optional[str]:
         """Infer market regime from technical agent's opinion data."""
+        fundamental_context = ctx.get_data("fundamental_context") or {}
+        if self._has_recent_event(fundamental_context):
+            return "event_driven"
+
         for op in ctx.opinions:
             if op.agent_name != "technical":
                 continue
@@ -109,10 +115,58 @@ class StrategyRouter:
                 return "volatile"
 
         # Check sector context in meta
-        if ctx.meta.get("sector_hot"):
+        if ctx.meta.get("sector_hot") or self._has_sector_heat(fundamental_context):
             return "sector_hot"
 
         return None
+
+    @staticmethod
+    def _has_recent_event(fundamental_context: Dict[str, Any]) -> bool:
+        """True when recent company-level events suggest event-driven routing."""
+        if not isinstance(fundamental_context, dict):
+            return False
+        announcements = fundamental_context.get("announcements", {})
+        if not isinstance(announcements, dict):
+            return False
+        events = (announcements.get("data") or {}).get("events", [])
+        if not isinstance(events, list):
+            return False
+
+        cutoff = datetime.now().date() - timedelta(days=7)
+        event_categories = {"earnings", "shareholder_change", "pledge", "regulatory", "contract_order", "lockup_unlock"}
+        for item in events:
+            if not isinstance(item, dict):
+                continue
+            if item.get("category") not in event_categories:
+                continue
+            raw_date = str(item.get("date") or "").strip()
+            if not raw_date:
+                return True
+            try:
+                if datetime.fromisoformat(raw_date).date() >= cutoff:
+                    return True
+            except ValueError:
+                return True
+        return False
+
+    @staticmethod
+    def _has_sector_heat(fundamental_context: Dict[str, Any]) -> bool:
+        """Infer hot-sector regime from board rankings and positive capital flow."""
+        if not isinstance(fundamental_context, dict):
+            return False
+
+        boards = fundamental_context.get("boards", {})
+        top_boards = (boards.get("data") or {}).get("top", []) if isinstance(boards, dict) else []
+        capital_flow = fundamental_context.get("capital_flow", {})
+        stock_flow = (capital_flow.get("data") or {}).get("stock_flow", {}) if isinstance(capital_flow, dict) else {}
+        main_net_inflow = stock_flow.get("main_net_inflow")
+
+        has_hot_board = isinstance(top_boards, list) and len(top_boards) > 0
+        try:
+            has_positive_flow = float(main_net_inflow or 0) > 0
+        except (TypeError, ValueError):
+            has_positive_flow = False
+        return has_hot_board or has_positive_flow
 
     @staticmethod
     def _get_routing_mode() -> str:

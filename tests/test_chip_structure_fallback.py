@@ -19,7 +19,9 @@ except ModuleNotFoundError:
 from data_provider.realtime_types import ChipDistribution
 from src.analyzer import (
     AnalysisResult,
+    format_chip_structure_summary,
     fill_chip_structure_if_needed,
+    mark_chip_structure_missing_if_needed,
     _is_value_placeholder,
     _derive_chip_health,
     _build_chip_structure_from_data,
@@ -243,3 +245,22 @@ class TestFillChipStructureIfNeeded(unittest.TestCase):
         cs = result.dashboard["data_perspective"]["chip_structure"]
         self.assertEqual(cs["profit_ratio"], "67.0%")
         self.assertEqual(cs["custom_note"], "LLM added this")
+
+    def test_mark_chip_structure_missing_when_no_source_data(self) -> None:
+        result = self._make_result(
+            dashboard={"data_perspective": {"chip_structure": {"profit_ratio": "0.0%", "avg_cost": 0, "concentration": "0.00%", "chip_health": ""}}}
+        )
+        mark_chip_structure_missing_if_needed(result, None)
+        cs = result.dashboard["data_perspective"]["chip_structure"]
+        self.assertEqual(cs["profit_ratio"], "数据缺失")
+        self.assertEqual(cs["avg_cost"], "数据缺失")
+        self.assertEqual(cs["concentration"], "数据缺失")
+        self.assertEqual(cs["chip_health"], "数据缺失")
+
+    def test_format_chip_structure_summary_hides_missing_placeholders(self) -> None:
+        self.assertEqual(
+            format_chip_structure_summary(
+                {"profit_ratio": "数据缺失", "avg_cost": "数据缺失", "concentration": "数据缺失", "chip_health": "数据缺失"}
+            ),
+            "数据缺失",
+        )

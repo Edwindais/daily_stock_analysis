@@ -226,7 +226,19 @@ def resolve_unified_llm_temperature(model: str) -> float:
             except (ValueError, TypeError):
                 continue
 
+    if _is_gemini3_model(model):
+        return 1.0
+
     return 0.7
+
+
+def _is_gemini3_model(model: str) -> bool:
+    """Return True when the configured LiteLLM model targets Gemini 3 family."""
+    normalized = (model or "").strip().lower()
+    if not normalized:
+        return False
+    model_name = normalized.split("/", 1)[-1]
+    return model_name.startswith("gemini-3-")
 
 
 def _get_litellm_provider(model: str) -> str:
@@ -292,6 +304,7 @@ class Config:
 
     # Unified temperature for all LLM calls (LLM_TEMPERATURE); legacy per-provider temps are fallback only
     llm_temperature: float = 0.7
+    _llm_temperature_explicit: bool = False
 
     # --- Multi-channel LLM config (new) ---
     # LITELLM_CONFIG: path to a standard litellm_config.yaml file (most powerful)
@@ -884,6 +897,7 @@ class Config:
             litellm_model=litellm_model,
             litellm_fallback_models=litellm_fallback_models,
             llm_temperature=resolve_unified_llm_temperature(litellm_model),
+            _llm_temperature_explicit=os.getenv('LLM_TEMPERATURE') is not None,
             litellm_config_path=litellm_config_path,
             llm_models_source=llm_models_source,
             llm_channels=llm_channels,

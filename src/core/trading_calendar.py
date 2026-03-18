@@ -100,7 +100,10 @@ def get_open_markets_today() -> Set[str]:
     if not _XCALS_AVAILABLE:
         return {"cn", "hk", "us"}
     result: Set[str] = set()
-    from zoneinfo import ZoneInfo
+    try:
+        from zoneinfo import ZoneInfo
+    except ModuleNotFoundError:  # pragma: no cover - Python < 3.9 fallback
+        from backports.zoneinfo import ZoneInfo
     for mkt, tz_name in MARKET_TIMEZONE.items():
         try:
             tz = ZoneInfo(tz_name)

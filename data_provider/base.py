@@ -1562,6 +1562,10 @@ class DataFetcherManager:
             "capital_flow",
             "dragon_tiger",
             "boards",
+            "announcements",
+            "northbound",
+            "margin",
+            "shareholder_count",
         ):
             payload = context.get(block, {})
             if isinstance(payload, dict) and DataFetcherManager._has_meaningful_payload(payload.get("data")):
@@ -1612,6 +1616,30 @@ class DataFetcherManager:
                 [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
                 [reason],
             ),
+            "announcements": self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                [reason],
+            ),
+            "northbound": self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                [reason],
+            ),
+            "margin": self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                [reason],
+            ),
+            "shareholder_count": self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                [reason],
+            ),
         }
         return {
             "market": market,
@@ -1635,6 +1663,10 @@ class DataFetcherManager:
             "capital_flow",
             "dragon_tiger",
             "boards",
+            "announcements",
+            "northbound",
+            "margin",
+            "shareholder_count",
         )
         blocks = {
             block: self._build_fundamental_block(
@@ -1709,6 +1741,10 @@ class DataFetcherManager:
             "capital_flow": {},
             "dragon_tiger": {},
             "boards": {},
+            "announcements": {},
+            "northbound": {},
+            "margin": {},
+            "shareholder_count": {},
             "coverage": {},
             "source_chain": [],
             "errors": [],
@@ -1890,6 +1926,30 @@ class DataFetcherManager:
                 [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
                 ["etf not fully supported"],
             )
+            result_ctx["announcements"] = self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                ["etf not fully supported"],
+            )
+            result_ctx["northbound"] = self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                ["etf not fully supported"],
+            )
+            result_ctx["margin"] = self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                ["etf not fully supported"],
+            )
+            result_ctx["shareholder_count"] = self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                ["etf not fully supported"],
+            )
             result_ctx["status"] = "partial"
         else:
             capital_flow_budget = min(fetch_timeout, remaining_seconds)
@@ -1908,10 +1968,44 @@ class DataFetcherManager:
             )
             _consume_budget(int((time.time() - dragon_tiger_start) * 1000))
 
+            boards_start = time.time()
             result_ctx["boards"] = self.get_board_context(
                 stock_code,
                 budget_seconds=min(fetch_timeout, remaining_seconds),
             )
+            _consume_budget(int((time.time() - boards_start) * 1000))
+
+            announcements_budget = min(fetch_timeout, remaining_seconds)
+            announcements_start = time.time()
+            result_ctx["announcements"] = self.get_announcements_context(
+                stock_code,
+                budget_seconds=announcements_budget,
+            )
+            _consume_budget(int((time.time() - announcements_start) * 1000))
+
+            northbound_budget = min(fetch_timeout, remaining_seconds)
+            northbound_start = time.time()
+            result_ctx["northbound"] = self.get_northbound_context(
+                stock_code,
+                budget_seconds=northbound_budget,
+            )
+            _consume_budget(int((time.time() - northbound_start) * 1000))
+
+            margin_budget = min(fetch_timeout, remaining_seconds)
+            margin_start = time.time()
+            result_ctx["margin"] = self.get_margin_context(
+                stock_code,
+                budget_seconds=margin_budget,
+            )
+            _consume_budget(int((time.time() - margin_start) * 1000))
+
+            shareholder_budget = min(fetch_timeout, remaining_seconds)
+            shareholder_start = time.time()
+            result_ctx["shareholder_count"] = self.get_shareholder_count_context(
+                stock_code,
+                budget_seconds=shareholder_budget,
+            )
+            _consume_budget(int((time.time() - shareholder_start) * 1000))
 
         block_statuses = {
             "valuation": result_ctx["valuation"].get("status", "not_supported"),
@@ -1921,6 +2015,10 @@ class DataFetcherManager:
             "capital_flow": result_ctx["capital_flow"].get("status", "not_supported"),
             "dragon_tiger": result_ctx["dragon_tiger"].get("status", "not_supported"),
             "boards": result_ctx["boards"].get("status", "not_supported"),
+            "announcements": result_ctx["announcements"].get("status", "not_supported"),
+            "northbound": result_ctx["northbound"].get("status", "not_supported"),
+            "margin": result_ctx["margin"].get("status", "not_supported"),
+            "shareholder_count": result_ctx["shareholder_count"].get("status", "not_supported"),
         }
         result_ctx["coverage"] = block_statuses
         for block in (
@@ -1931,6 +2029,10 @@ class DataFetcherManager:
             "capital_flow",
             "dragon_tiger",
             "boards",
+            "announcements",
+            "northbound",
+            "margin",
+            "shareholder_count",
         ):
             result_ctx["errors"].extend(result_ctx[block].get("errors", []))
             result_ctx["source_chain"].extend(result_ctx[block].get("source_chain", []))
@@ -2127,6 +2229,202 @@ class DataFetcherManager:
             {},
             [{"provider": "sector_rankings", "result": "failed", "duration_ms": cost_ms}],
             [err or "boards failed"],
+        )
+
+    def get_announcements_context(self, stock_code: str, budget_seconds: Optional[float] = None) -> Dict[str, Any]:
+        """公告事件块（fail-open）。"""
+        from src.config import get_config
+
+        config = get_config()
+        stock_code = normalize_stock_code(stock_code)
+        timeout = float(budget_seconds if budget_seconds is not None else config.fundamental_fetch_timeout_seconds)
+        if _market_tag(stock_code) != "cn" or _is_etf_code(stock_code):
+            return self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                ["not supported"],
+            )
+        if timeout <= 0:
+            return self._build_fundamental_block(
+                "failed",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "failed", "duration_ms": 0}],
+                ["fundamental stage timeout"],
+            )
+
+        payload, err, cost_ms = self._run_with_retry(
+            lambda: self._fundamental_adapter.get_announcements(stock_code),
+            timeout,
+            "announcements",
+        )
+        if not isinstance(payload, dict):
+            return self._build_fundamental_block(
+                "failed",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "failed", "duration_ms": cost_ms}],
+                [err or "announcements failed"],
+            )
+
+        events = payload.get("events") if isinstance(payload.get("events"), list) else []
+        status = "ok" if events else str(payload.get("status", "partial"))
+        return self._build_fundamental_block(
+            status,
+            {"events": events},
+            self._normalize_source_chain(
+                payload.get("source_chain", []),
+                "announcements",
+                status,
+                cost_ms,
+            ),
+            list(payload.get("errors", [])) + ([err] if err else []),
+        )
+
+    def get_northbound_context(self, stock_code: str, budget_seconds: Optional[float] = None) -> Dict[str, Any]:
+        """北向持仓块（fail-open）。"""
+        from src.config import get_config
+
+        config = get_config()
+        stock_code = normalize_stock_code(stock_code)
+        timeout = float(budget_seconds if budget_seconds is not None else config.fundamental_fetch_timeout_seconds)
+        if _market_tag(stock_code) != "cn" or _is_etf_code(stock_code):
+            return self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                ["not supported"],
+            )
+        if timeout <= 0:
+            return self._build_fundamental_block(
+                "failed",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "failed", "duration_ms": 0}],
+                ["fundamental stage timeout"],
+            )
+
+        payload, err, cost_ms = self._run_with_retry(
+            lambda: self._fundamental_adapter.get_northbound_holdings(stock_code),
+            timeout,
+            "northbound",
+        )
+        if not isinstance(payload, dict):
+            return self._build_fundamental_block(
+                "failed",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "failed", "duration_ms": cost_ms}],
+                [err or "northbound failed"],
+            )
+
+        data = payload.get("data", {}) if isinstance(payload.get("data"), dict) else {}
+        status = self._infer_block_status(data, str(payload.get("status", "not_supported")))
+        return self._build_fundamental_block(
+            status,
+            data,
+            self._normalize_source_chain(
+                payload.get("source_chain", []),
+                "northbound",
+                status,
+                cost_ms,
+            ),
+            list(payload.get("errors", [])) + ([err] if err else []),
+        )
+
+    def get_margin_context(self, stock_code: str, budget_seconds: Optional[float] = None) -> Dict[str, Any]:
+        """融资融券块（fail-open）。"""
+        from src.config import get_config
+
+        config = get_config()
+        stock_code = normalize_stock_code(stock_code)
+        timeout = float(budget_seconds if budget_seconds is not None else config.fundamental_fetch_timeout_seconds)
+        if _market_tag(stock_code) != "cn" or _is_etf_code(stock_code):
+            return self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                ["not supported"],
+            )
+        if timeout <= 0:
+            return self._build_fundamental_block(
+                "failed",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "failed", "duration_ms": 0}],
+                ["fundamental stage timeout"],
+            )
+
+        payload, err, cost_ms = self._run_with_retry(
+            lambda: self._fundamental_adapter.get_margin_balance(stock_code),
+            timeout,
+            "margin",
+        )
+        if not isinstance(payload, dict):
+            return self._build_fundamental_block(
+                "failed",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "failed", "duration_ms": cost_ms}],
+                [err or "margin failed"],
+            )
+
+        data = payload.get("data", {}) if isinstance(payload.get("data"), dict) else {}
+        status = self._infer_block_status(data, str(payload.get("status", "not_supported")))
+        return self._build_fundamental_block(
+            status,
+            data,
+            self._normalize_source_chain(
+                payload.get("source_chain", []),
+                "margin",
+                status,
+                cost_ms,
+            ),
+            list(payload.get("errors", [])) + ([err] if err else []),
+        )
+
+    def get_shareholder_count_context(self, stock_code: str, budget_seconds: Optional[float] = None) -> Dict[str, Any]:
+        """股东户数块（fail-open）。"""
+        from src.config import get_config
+
+        config = get_config()
+        stock_code = normalize_stock_code(stock_code)
+        timeout = float(budget_seconds if budget_seconds is not None else config.fundamental_fetch_timeout_seconds)
+        if _market_tag(stock_code) != "cn" or _is_etf_code(stock_code):
+            return self._build_fundamental_block(
+                "not_supported",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "not_supported", "duration_ms": 0}],
+                ["not supported"],
+            )
+        if timeout <= 0:
+            return self._build_fundamental_block(
+                "failed",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "failed", "duration_ms": 0}],
+                ["fundamental stage timeout"],
+            )
+
+        payload, err, cost_ms = self._run_with_retry(
+            lambda: self._fundamental_adapter.get_shareholder_count(stock_code),
+            timeout,
+            "shareholder_count",
+        )
+        if not isinstance(payload, dict):
+            return self._build_fundamental_block(
+                "failed",
+                {},
+                [{"provider": "fundamental_pipeline", "result": "failed", "duration_ms": cost_ms}],
+                [err or "shareholder_count failed"],
+            )
+
+        data = payload.get("data", {}) if isinstance(payload.get("data"), dict) else {}
+        status = self._infer_block_status(data, str(payload.get("status", "not_supported")))
+        return self._build_fundamental_block(
+            status,
+            data,
+            self._normalize_source_chain(
+                payload.get("source_chain", []),
+                "shareholder_count",
+                status,
+                cost_ms,
+            ),
+            list(payload.get("errors", [])) + ([err] if err else []),
         )
 
     def _get_sector_rankings_with_meta(

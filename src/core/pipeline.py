@@ -25,7 +25,13 @@ from src.config import get_config, Config
 from src.storage import get_db
 from data_provider import DataFetcherManager
 from data_provider.realtime_types import ChipDistribution
-from src.analyzer import GeminiAnalyzer, AnalysisResult, fill_chip_structure_if_needed, fill_price_position_if_needed
+from src.analyzer import (
+    GeminiAnalyzer,
+    AnalysisResult,
+    fill_chip_structure_if_needed,
+    fill_price_position_if_needed,
+    mark_chip_structure_missing_if_needed,
+)
 from src.data.stock_mapping import STOCK_NAME_MAP
 from src.notification import NotificationService, NotificationChannel
 from src.search_service import SearchService
@@ -117,6 +123,36 @@ class StockAnalysisPipeline:
         )
         if self.social_sentiment_service.is_available:
             logger.info("Social sentiment service enabled (Reddit/X/Polymarket, US stocks only)")
+
+        self._log_runtime_config()
+
+    def _log_runtime_config(self) -> None:
+        """Log the effective runtime configuration for reproducible runs."""
+        configured_skills = [
+            skill
+            for skill in (getattr(self.config, "agent_skills", []) or [])
+            if isinstance(skill, str) and skill
+        ]
+        logger.info(
+            "[运行配置] model=%s temperature=%s explicit_temp=%s",
+            getattr(self.config, "litellm_model", ""),
+            getattr(self.config, "llm_temperature", "N/A"),
+            getattr(self.config, "_llm_temperature_explicit", False),
+        )
+        logger.info(
+            "[运行配置] news_profile=%s news_max_age_days=%s effective_news_window=%s",
+            getattr(self.config, "news_strategy_profile", "short"),
+            getattr(self.config, "news_max_age_days", 3),
+            getattr(self.search_service, "news_window_days", "N/A"),
+        )
+        logger.info(
+            "[运行配置] agent_mode=%s agent_arch=%s orchestrator_mode=%s routing=%s skills=%s",
+            getattr(self.config, "agent_mode", False),
+            getattr(self.config, "agent_arch", "single"),
+            getattr(self.config, "agent_orchestrator_mode", "standard"),
+            getattr(self.config, "agent_strategy_routing", "auto"),
+            configured_skills or ["default"],
+        )
 
     def fetch_and_save_stock_data(
         self, 
@@ -400,8 +436,11 @@ class StockAnalysisPipeline:
                 result.change_pct = realtime_data.get('change_pct')
 
             # Step 7.6: chip_structure fallback (Issue #589)
-            if result and chip_data:
-                fill_chip_structure_if_needed(result, chip_data)
+            if result:
+                if chip_data:
+                    fill_chip_structure_if_needed(result, chip_data)
+                else:
+                    mark_chip_structure_missing_if_needed(result, chip_data)
 
             # Step 7.7: price_position fallback
             if result:
@@ -460,6 +499,11 @@ class StockAnalysisPipeline:
             增强后的上下文
         """
         enhanced = context.copy()
+
+        if isinstance(context.get("today"), dict):
+            enhanced["daily_today_snapshot"] = dict(context.get("today") or {})
+        if isinstance(context.get("yesterday"), dict):
+            enhanced["daily_yesterday_snapshot"] = dict(context.get("yesterday") or {})
         
         # 添加股票名称
         if stock_name:
@@ -687,8 +731,11 @@ class StockAnalysisPipeline:
                         missing,
                     )
             # chip_structure fallback (Issue #589), before save_analysis_history
-            if result and chip_data:
-                fill_chip_structure_if_needed(result, chip_data)
+            if result:
+                if chip_data:
+                    fill_chip_structure_if_needed(result, chip_data)
+                else:
+                    mark_chip_structure_missing_if_needed(result, chip_data)
 
             # price_position fallback (same as non-agent path Step 7.7)
             if result:

@@ -12,7 +12,7 @@ Tools:
 import logging
 from datetime import date
 from threading import Lock
-from typing import Optional
+from typing import Optional, Tuple
 
 from src.agent.tools.registry import ToolParameter, ToolDefinition
 
@@ -63,6 +63,10 @@ def _compact_fundamental_context(fundamental_context: dict) -> dict:
         "capital_flow",
         "dragon_tiger",
         "boards",
+        "announcements",
+        "northbound",
+        "margin",
+        "shareholder_count",
     )
     compact = {
         "market": fundamental_context.get("market"),
@@ -79,6 +83,19 @@ def _compact_fundamental_context(fundamental_context: dict) -> dict:
         else:
             compact[block] = {"status": "failed", "data": {}}
     return compact
+
+
+def _subset_fundamental_context(fundamental_context: dict, blocks: Tuple[str, ...]) -> dict:
+    """Extract a small subset of fundamental_context for narrow tools."""
+    compact = _compact_fundamental_context(fundamental_context)
+    subset = {
+        "market": compact.get("market"),
+        "status": compact.get("status"),
+        "coverage": compact.get("coverage", {}),
+    }
+    for block in blocks:
+        subset[block] = compact.get(block, {"status": "failed", "data": {}})
+    return subset
 
 
 def _compact_portfolio_snapshot(snapshot: dict, include_positions: bool = False, top_n: int = 5) -> dict:
@@ -403,6 +420,71 @@ def _handle_get_stock_info(stock_code: str) -> dict:
     }
 
 
+def _handle_get_stock_event_context(stock_code: str) -> dict:
+    """Get compact A-share event context with announcements and chip-dispersion clues."""
+    manager = _get_fetcher_manager()
+    try:
+        fundamental_context = manager.get_fundamental_context(stock_code)
+    except Exception as e:
+        logger.warning(f"get_stock_event_context via fundamental pipeline failed for {stock_code}: {e}")
+        fundamental_context = manager.build_failed_fundamental_context(stock_code, str(e))
+
+    compact_context = _subset_fundamental_context(
+        fundamental_context,
+        ("announcements", "shareholder_count", "earnings", "valuation"),
+    )
+
+    stock_name = stock_code.upper()
+    try:
+        stock_name = manager.get_stock_name(stock_code) or stock_name
+    except Exception:
+        pass
+
+    return {
+        "code": stock_code.upper(),
+        "name": stock_name,
+        "event_context": compact_context,
+        "recent_announcements": compact_context.get("announcements", {}).get("data", {}).get("events", []),
+        "shareholder_count": compact_context.get("shareholder_count", {}).get("data", {}),
+        "earnings_snapshot": compact_context.get("earnings", {}).get("data", {}),
+        "valuation_snapshot": compact_context.get("valuation", {}).get("data", {}),
+    }
+
+
+def _handle_get_a_share_flow_context(stock_code: str) -> dict:
+    """Get compact A-share flow context for capital/board/dragon-tiger checks."""
+    manager = _get_fetcher_manager()
+    try:
+        fundamental_context = manager.get_fundamental_context(stock_code)
+    except Exception as e:
+        logger.warning(f"get_a_share_flow_context via fundamental pipeline failed for {stock_code}: {e}")
+        fundamental_context = manager.build_failed_fundamental_context(stock_code, str(e))
+
+    compact_context = _subset_fundamental_context(
+        fundamental_context,
+        ("capital_flow", "dragon_tiger", "boards", "northbound", "margin"),
+    )
+    belong_boards = manager.get_belong_boards(stock_code)
+
+    stock_name = stock_code.upper()
+    try:
+        stock_name = manager.get_stock_name(stock_code) or stock_name
+    except Exception:
+        pass
+
+    return {
+        "code": stock_code.upper(),
+        "name": stock_name,
+        "flow_context": compact_context,
+        "belong_boards": belong_boards,
+        "capital_flow": compact_context.get("capital_flow", {}).get("data", {}),
+        "dragon_tiger": compact_context.get("dragon_tiger", {}).get("data", {}),
+        "northbound": compact_context.get("northbound", {}).get("data", {}),
+        "margin": compact_context.get("margin", {}).get("data", {}),
+        "sector_rankings": compact_context.get("boards", {}).get("data", {}),
+    }
+
+
 get_stock_info_tool = ToolDefinition(
     name="get_stock_info",
     description="Get stock fundamental information: valuation, growth, earnings, institution flow, "
@@ -416,6 +498,39 @@ get_stock_info_tool = ToolDefinition(
         ),
     ],
     handler=_handle_get_stock_info,
+    category="data",
+)
+
+
+get_stock_event_context_tool = ToolDefinition(
+    name="get_stock_event_context",
+    description="Get A-share structured event context: recent company announcements, "
+                "shareholder-count change, earnings snapshot, and valuation snapshot. "
+                "Use this before broad news search when screening event-driven setups.",
+    parameters=[
+        ToolParameter(
+            name="stock_code",
+            type="string",
+            description="A-share stock code, e.g., '600519'",
+        ),
+    ],
+    handler=_handle_get_stock_event_context,
+    category="data",
+)
+
+
+get_a_share_flow_context_tool = ToolDefinition(
+    name="get_a_share_flow_context",
+    description="Get A-share capital-flow context: main flow, sector rankings, dragon-tiger list, "
+                "northbound holding change, margin balance direction, and belong_boards.",
+    parameters=[
+        ToolParameter(
+            name="stock_code",
+            type="string",
+            description="A-share stock code, e.g., '600519'",
+        ),
+    ],
+    handler=_handle_get_a_share_flow_context,
     category="data",
 )
 
@@ -537,5 +652,7 @@ ALL_DATA_TOOLS = [
     get_chip_distribution_tool,
     get_analysis_context_tool,
     get_stock_info_tool,
+    get_stock_event_context_tool,
+    get_a_share_flow_context_tool,
     get_portfolio_snapshot_tool,
 ]

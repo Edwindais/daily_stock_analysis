@@ -7,6 +7,7 @@ import sys
 import unittest
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+from typing import Optional
 from unittest.mock import MagicMock, patch
 
 # Mock newspaper before search_service import (optional dependency)
@@ -19,10 +20,10 @@ if "newspaper" not in sys.modules:
 from src.search_service import SearchResponse, SearchResult, SearchService
 
 
-def _result(title: str, published_date: str | None) -> SearchResult:
+def _result(title: str, published_date: Optional[str]) -> SearchResult:
     return SearchResult(
         title=title,
-        snippet="snippet",
+        snippet="贵州茅台 600519 snippet",
         url=f"https://example.com/{title}",
         source="example.com",
         published_date=published_date,
@@ -46,7 +47,7 @@ class SearchNewsFreshnessTestCase(unittest.TestCase):
         *,
         news_max_age_days: int = 3,
         news_strategy_profile: str = "short",
-        response: SearchResponse | None = None,
+        response: Optional[SearchResponse] = None,
     ):
         service = SearchService(
             bocha_keys=["dummy_key"],
@@ -211,6 +212,59 @@ class SearchNewsFreshnessTestCase(unittest.TestCase):
 
         resp = service.search_stock_news("600519", "贵州茅台", max_results=5)
         self.assertEqual([item.title for item in resp.results], ["贵州茅台发布回购进展公告"])
+
+    def test_search_stock_news_dedupes_same_article(self) -> None:
+        today = datetime.now().date().isoformat()
+        duplicate_url = "https://example.com/moutai-buyback?from=feed"
+        service, _ = self._create_service_with_mock_provider(
+            news_max_age_days=7,
+            news_strategy_profile="medium",
+            response=_response(
+                [
+                    SearchResult(
+                        title="贵州茅台发布回购进展公告",
+                        snippet="600519 公司公告",
+                        url=duplicate_url,
+                        source="example.com",
+                        published_date=today,
+                    ),
+                    SearchResult(
+                        title="贵州茅台发布回购进展公告",
+                        snippet="重复抓取",
+                        url="https://example.com/moutai-buyback",
+                        source="example.com",
+                        published_date=today,
+                    ),
+                ]
+            ),
+        )
+
+        resp = service.search_stock_news("600519", "贵州茅台", max_results=5)
+        self.assertEqual(len(resp.results), 1)
+
+    def test_search_stock_news_deprioritizes_tavily_for_a_share(self) -> None:
+        today = datetime.now().date().isoformat()
+        service = SearchService(
+            bocha_keys=["dummy_key"],
+            news_max_age_days=7,
+            news_strategy_profile="medium",
+        )
+        tavily = SimpleNamespace(
+            is_available=True,
+            name="Tavily",
+            search=MagicMock(return_value=_response([_result("tavily", today)])),
+        )
+        bocha = SimpleNamespace(
+            is_available=True,
+            name="Bocha",
+            search=MagicMock(return_value=_response([_result("bocha", today)])),
+        )
+        service._providers = [tavily, bocha]
+
+        resp = service.search_stock_news("600519", "贵州茅台", max_results=3)
+        self.assertEqual([item.title for item in resp.results], ["bocha"])
+        bocha.search.assert_called_once()
+        tavily.search.assert_not_called()
 
     def test_effective_window_helper_has_no_side_effect(self) -> None:
         """_effective_news_window_days should not mutate stored news_window_days."""

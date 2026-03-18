@@ -57,6 +57,10 @@ class TestFundamentalContext(unittest.TestCase):
         self.assertEqual(ctx["coverage"].get("capital_flow"), "not_supported")
         self.assertEqual(ctx["coverage"].get("dragon_tiger"), "not_supported")
         self.assertEqual(ctx["coverage"].get("boards"), "not_supported")
+        self.assertEqual(ctx["coverage"].get("announcements"), "not_supported")
+        self.assertEqual(ctx["coverage"].get("northbound"), "not_supported")
+        self.assertEqual(ctx["coverage"].get("margin"), "not_supported")
+        self.assertEqual(ctx["coverage"].get("shareholder_count"), "not_supported")
 
     def test_etf_market_downgrades_to_partial_or_not_supported(self) -> None:
         manager = DataFetcherManager(fetchers=[])
@@ -99,6 +103,10 @@ class TestFundamentalContext(unittest.TestCase):
         self.assertEqual(ctx["coverage"].get("capital_flow"), "not_supported")
         self.assertEqual(ctx["coverage"].get("dragon_tiger"), "not_supported")
         self.assertEqual(ctx["coverage"].get("boards"), "not_supported")
+        self.assertEqual(ctx["coverage"].get("announcements"), "not_supported")
+        self.assertEqual(ctx["coverage"].get("northbound"), "not_supported")
+        self.assertEqual(ctx["coverage"].get("margin"), "not_supported")
+        self.assertEqual(ctx["coverage"].get("shareholder_count"), "not_supported")
 
     def test_sector_rankings_use_ordered_fallback(self) -> None:
         akshare = _DummyFetcher("AkshareFetcher", priority=5, rankings=None)
@@ -144,13 +152,21 @@ class TestFundamentalContext(unittest.TestCase):
                 }), \
                 patch.object(manager, "get_capital_flow_context", return_value={"status": "partial", "source_chain": []}), \
                 patch.object(manager, "get_dragon_tiger_context", return_value={"status": "partial", "source_chain": []}), \
-                patch.object(manager, "get_board_context", return_value={"status": "partial", "source_chain": []}):
+                patch.object(manager, "get_board_context", return_value={"status": "partial", "source_chain": []}), \
+                patch.object(manager, "get_announcements_context", return_value={"status": "partial", "source_chain": []}), \
+                patch.object(manager, "get_northbound_context", return_value={"status": "partial", "source_chain": []}), \
+                patch.object(manager, "get_margin_context", return_value={"status": "partial", "source_chain": []}), \
+                patch.object(manager, "get_shareholder_count_context", return_value={"status": "partial", "source_chain": []}):
             ctx = manager.get_fundamental_context("600519", budget_seconds=1.5)
         self.assertEqual(ctx["market"], "cn")
         self.assertIn("valuation", ctx)
         self.assertIn("growth", ctx)
         self.assertIn("capital_flow", ctx)
         self.assertIn("dragon_tiger", ctx)
+        self.assertIn("announcements", ctx)
+        self.assertIn("northbound", ctx)
+        self.assertIn("margin", ctx)
+        self.assertIn("shareholder_count", ctx)
 
     def test_fundamental_context_derives_ttm_dividend_yield_from_quote_price(self) -> None:
         manager = DataFetcherManager(fetchers=[])
@@ -187,7 +203,11 @@ class TestFundamentalContext(unittest.TestCase):
                 }), \
                 patch.object(manager, "get_capital_flow_context", return_value={"status": "not_supported", "source_chain": []}), \
                 patch.object(manager, "get_dragon_tiger_context", return_value={"status": "not_supported", "source_chain": []}), \
-                patch.object(manager, "get_board_context", return_value={"status": "not_supported", "source_chain": []}):
+                patch.object(manager, "get_board_context", return_value={"status": "not_supported", "source_chain": []}), \
+                patch.object(manager, "get_announcements_context", return_value={"status": "not_supported", "source_chain": []}), \
+                patch.object(manager, "get_northbound_context", return_value={"status": "not_supported", "source_chain": []}), \
+                patch.object(manager, "get_margin_context", return_value={"status": "not_supported", "source_chain": []}), \
+                patch.object(manager, "get_shareholder_count_context", return_value={"status": "not_supported", "source_chain": []}):
             ctx = manager.get_fundamental_context("600519", budget_seconds=1.5)
 
         dividend_payload = ctx["earnings"]["data"]["dividend"]
@@ -228,7 +248,11 @@ class TestFundamentalContext(unittest.TestCase):
                 }), \
                 patch.object(manager, "get_capital_flow_context", return_value={"status": "not_supported", "source_chain": []}), \
                 patch.object(manager, "get_dragon_tiger_context", return_value={"status": "not_supported", "source_chain": []}), \
-                patch.object(manager, "get_board_context", return_value={"status": "not_supported", "source_chain": []}):
+                patch.object(manager, "get_board_context", return_value={"status": "not_supported", "source_chain": []}), \
+                patch.object(manager, "get_announcements_context", return_value={"status": "not_supported", "source_chain": []}), \
+                patch.object(manager, "get_northbound_context", return_value={"status": "not_supported", "source_chain": []}), \
+                patch.object(manager, "get_margin_context", return_value={"status": "not_supported", "source_chain": []}), \
+                patch.object(manager, "get_shareholder_count_context", return_value={"status": "not_supported", "source_chain": []}):
             ctx = manager.get_fundamental_context("600519", budget_seconds=1.5)
 
         dividend_payload = ctx["earnings"]["data"]["dividend"]

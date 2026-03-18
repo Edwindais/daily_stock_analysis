@@ -10,7 +10,11 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.agent.tools.data_tools import _handle_get_stock_info
+from src.agent.tools.data_tools import (
+    _handle_get_a_share_flow_context,
+    _handle_get_stock_event_context,
+    _handle_get_stock_info,
+)
 
 
 class _DummyManager:
@@ -26,6 +30,10 @@ class _DummyManager:
                 "capital_flow": "not_supported",
                 "dragon_tiger": "not_supported",
                 "boards": "ok",
+                "announcements": "ok",
+                "northbound": "ok",
+                "margin": "ok",
+                "shareholder_count": "ok",
             },
             "valuation": {
                 "status": "ok",
@@ -40,7 +48,7 @@ class _DummyManager:
             "earnings": {"status": "not_supported", "data": {}},
             "institution": {"status": "not_supported", "data": {}},
             "capital_flow": {"status": "not_supported", "data": {}},
-            "dragon_tiger": {"status": "not_supported", "data": {}},
+            "dragon_tiger": {"status": "ok", "data": {"is_on_list": True, "recent_count": 1, "latest_date": "2026-03-18"}},
             "boards": {
                 "status": "ok",
                 "data": {
@@ -48,6 +56,17 @@ class _DummyManager:
                     "bottom": [{"name": "煤炭", "change_pct": -1.7}],
                 },
             },
+            "announcements": {
+                "status": "ok",
+                "data": {
+                    "events": [
+                        {"date": "2026-03-18", "category": "earnings", "title": "贵州茅台业绩快报"},
+                    ]
+                },
+            },
+            "northbound": {"status": "ok", "data": {"net_buy_direction": "净买入", "change_shares_5d": 12345}},
+            "margin": {"status": "ok", "data": {"direction": "明显加杠杆", "balance_change_pct": 5.6}},
+            "shareholder_count": {"status": "ok", "data": {"trend": "筹码趋集", "delta_pct": -3.2}},
         }
         self._belong_boards = [{"name": "白酒"}, {"name": "消费"}]
 
@@ -85,6 +104,28 @@ class TestGetStockInfoContract(unittest.TestCase):
             result["fundamental_context"]["boards"]["data"],
             result["sector_rankings"],
         )
+
+    def test_get_stock_event_context_exposes_structured_event_blocks(self) -> None:
+        manager = _DummyManager()
+        with patch("src.agent.tools.data_tools._get_fetcher_manager", return_value=manager):
+            result = _handle_get_stock_event_context("600519")
+
+        self.assertEqual(result["name"], "贵州茅台")
+        self.assertEqual(result["recent_announcements"][0]["category"], "earnings")
+        self.assertEqual(result["shareholder_count"]["trend"], "筹码趋集")
+        self.assertIn("announcements", result["event_context"])
+        self.assertIn("shareholder_count", result["event_context"])
+
+    def test_get_a_share_flow_context_exposes_flow_blocks(self) -> None:
+        manager = _DummyManager()
+        with patch("src.agent.tools.data_tools._get_fetcher_manager", return_value=manager):
+            result = _handle_get_a_share_flow_context("600519")
+
+        self.assertEqual(result["name"], "贵州茅台")
+        self.assertEqual(result["northbound"]["net_buy_direction"], "净买入")
+        self.assertEqual(result["margin"]["direction"], "明显加杠杆")
+        self.assertEqual(result["dragon_tiger"]["is_on_list"], True)
+        self.assertEqual(result["belong_boards"], manager._belong_boards)
 
 
 if __name__ == "__main__":

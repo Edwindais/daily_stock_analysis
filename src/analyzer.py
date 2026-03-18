@@ -166,9 +166,26 @@ def _build_chip_structure_from_data(chip_data: Any) -> Dict[str, Any]:
     }
 
 
+def _has_real_chip_data(chip_data: Any) -> bool:
+    """True when chip data actually exists rather than placeholder / missing values."""
+    if chip_data is None:
+        return False
+    if hasattr(chip_data, "profit_ratio"):
+        return any(
+            getattr(chip_data, field, None) not in (None, 0)
+            for field in ("profit_ratio", "avg_cost", "concentration_90", "concentration_70")
+        )
+    if isinstance(chip_data, dict):
+        return any(
+            chip_data.get(field) not in (None, 0, "0", "0.0")
+            for field in ("profit_ratio", "avg_cost", "concentration_90", "concentration_70")
+        )
+    return False
+
+
 def fill_chip_structure_if_needed(result: "AnalysisResult", chip_data: Any) -> None:
     """When chip_data exists, fill chip_structure placeholder fields from chip_data (in-place)."""
-    if not result or not chip_data:
+    if not result or not _has_real_chip_data(chip_data):
         return
     try:
         if not result.dashboard:
@@ -189,6 +206,49 @@ def fill_chip_structure_if_needed(result: "AnalysisResult", chip_data: Any) -> N
             logger.info("[chip_structure] Filled placeholder chip fields from data source (Issue #589)")
     except Exception as e:
         logger.warning("[chip_structure] Fill failed, skipping: %s", e)
+
+
+def mark_chip_structure_missing_if_needed(result: "AnalysisResult", chip_data: Any = None) -> None:
+    """When chip data is unavailable, force chip_structure to render as missing."""
+    if not result or _has_real_chip_data(chip_data):
+        return
+    try:
+        if not result.dashboard:
+            result.dashboard = {}
+        dash = result.dashboard
+        dp = dash.get("data_perspective") or {}
+        dash["data_perspective"] = dp
+        dp["chip_structure"] = {
+            "profit_ratio": "数据缺失",
+            "avg_cost": "数据缺失",
+            "concentration": "数据缺失",
+            "chip_health": "数据缺失",
+        }
+    except Exception as e:
+        logger.warning("[chip_structure] Missing-state fill failed, skipping: %s", e)
+
+
+def format_chip_structure_summary(chip_data: Dict[str, Any]) -> str:
+    """Format chip structure for markdown display without leaking fake zeros."""
+    payload = chip_data if isinstance(chip_data, dict) else {}
+    if not payload:
+        return "数据缺失"
+    values = [payload.get(key) for key in _CHIP_KEYS]
+    normalized = [str(value).strip() if value is not None else "" for value in values]
+    if not any(normalized):
+        return "数据缺失"
+    if all(value in {"", "N/A", "数据缺失", "未知"} for value in normalized):
+        return "数据缺失"
+
+    chip_health = payload.get("chip_health", "N/A")
+    chip_emoji = "✅" if chip_health == "健康" else ("⚠️" if chip_health == "一般" else "🚨")
+    if chip_health == "数据缺失":
+        chip_emoji = "⚪"
+    return (
+        f"获利比例 {payload.get('profit_ratio', 'N/A')} | "
+        f"平均成本 {payload.get('avg_cost', 'N/A')} | "
+        f"集中度 {payload.get('concentration', 'N/A')} {chip_emoji}{chip_health}"
+    )
 
 
 _PRICE_POS_KEYS = ("ma5", "ma10", "ma20", "bias_ma5", "bias_status", "current_price", "support_level", "resistance_level")
@@ -547,11 +607,12 @@ class GeminiAnalyzer:
 - 此类股票可轻仓追踪，但仍需设置止损，不盲目追高
 
 ### 8. A股风格分类（先分类，再决策）
-- 先判断标的更接近：**普通趋势股 / 题材动量股 / 事件驱动股 / ST风险股**
-- 普通趋势股：严格执行均线与乖离率纪律
-- 题材动量股：只有在**热点板块、资金流入、龙虎榜/涨停驱动**共振时，才可有限放宽追高限制，并明确“轻仓试错 + 明确止损”
-- 事件驱动股：优先看公告、合同、订单、业绩预告等催化，不得只靠均线下结论
-- ST / *ST：默认高风险，不能按普通成长股或价值股处理
+- 先判断标的更接近以下 5 类之一：`trend` / `sector_momentum` / `event_driven` / `turnaround_loss` / `st_high_risk`
+- `trend`：普通趋势股，严格执行均线与乖离率纪律
+- `sector_momentum`：题材动量股，只有在**热点板块、资金流入、龙虎榜/涨停驱动**共振时，才可有限放宽追高限制，并明确“轻仓试错 + 明确止损”
+- `event_driven`：优先看公告、合同、订单、业绩预告等催化，不得只靠均线下结论
+- `turnaround_loss`：负 PE、亏损修复逻辑不清、扭亏依赖预期而非已验证事实时，默认高波动高不确定性
+- `st_high_risk`：ST / *ST 默认高风险，不能按普通成长股或价值股处理
 
 ### 9. 资金与估值联合判断
 - 不能只用单一 PE 高低直接否定成长股 / 题材股
@@ -563,6 +624,7 @@ class GeminiAnalyzer:
 - 行情页、报价页、股票中心页、泛行业报告，**不能**当作个股事件证据
 - 同名或相似简称但股票代码不一致的资讯，一律忽略
 - 若证据不足，明确写“暂无足够事件证据”，禁止脑补
+- 证据优先级固定为：**结构化事件/公告 > 资金与板块 > 过滤后的新闻 > 泛化叙述**
 
 ## 输出格式：决策仪表盘 JSON
 
@@ -812,7 +874,7 @@ class GeminiAnalyzer:
             or generation_config.get('max_tokens')
             or 8192
         )
-        temperature = generation_config.get('temperature', 0.7)
+        temperature = generation_config.get('temperature', config.llm_temperature)
 
         models_to_try = [config.litellm_model] + (config.litellm_fallback_models or [])
         models_to_try = [m for m in models_to_try if m]
@@ -875,7 +937,7 @@ class GeminiAnalyzer:
         self,
         prompt: str,
         max_tokens: int = 2048,
-        temperature: float = 0.7,
+        temperature: Optional[float] = None,
     ) -> Optional[str]:
         """Public entry point for free-form text generation.
 
@@ -886,15 +948,19 @@ class GeminiAnalyzer:
         Args:
             prompt:      Text prompt to send to the LLM.
             max_tokens:  Maximum tokens in the response (default 2048).
-            temperature: Sampling temperature (default 0.7).
+            temperature: Sampling temperature. Defaults to unified config value.
 
         Returns:
             Response text, or None if the LLM call fails (error is logged).
         """
         try:
+            cfg = get_config()
             result = self._call_litellm(
                 prompt,
-                generation_config={"max_tokens": max_tokens, "temperature": temperature},
+                generation_config={
+                    "max_tokens": max_tokens,
+                    "temperature": cfg.llm_temperature if temperature is None else temperature,
+                },
             )
             if isinstance(result, tuple):
                 text, model_used, usage = result
@@ -1083,7 +1149,21 @@ class GeminiAnalyzer:
         if not stock_name or stock_name == f'股票{code}':
             stock_name = STOCK_NAME_MAP.get(code, f'股票{code}')
             
-        today = context.get('today', {})
+        today = context.get('daily_today_snapshot') or context.get('today', {})
+
+        def _block_status(block: Any) -> str:
+            return str(block.get("status", "not_supported")) if isinstance(block, dict) else "not_supported"
+
+        def _block_data(block: Any) -> Dict[str, Any]:
+            return block.get("data", {}) if isinstance(block, dict) and isinstance(block.get("data"), dict) else {}
+
+        def _block_evidence_line(label: str, block: Any, unsupported_hint: str = "当前标的不支持") -> str:
+            status = _block_status(block)
+            if status == "ok":
+                return f"- {label}：已获取，可作为直接证据"
+            if status == "not_supported":
+                return f"- {label}：{unsupported_hint}"
+            return f"- {label}：数据缺失/抓取失败，必须写“证据不足”"
         
         # ========== 构建决策仪表盘格式的输入 ==========
         prompt = f"""# 决策仪表盘分析请求
@@ -1099,7 +1179,7 @@ class GeminiAnalyzer:
 
 ## 📈 技术面数据
 
-### 今日行情
+### 今日行情（日线快照）
 | 指标 | 数值 |
 |------|------|
 | 收盘价 | {today.get('close', 'N/A')} 元 |
@@ -1167,28 +1247,36 @@ class GeminiAnalyzer:
             if isinstance(fundamental_context, dict)
             else {}
         )
-        valuation_data = valuation_block.get("data", {}) if isinstance(valuation_block, dict) else {}
-        growth_data = growth_block.get("data", {}) if isinstance(growth_block, dict) else {}
-        earnings_data = (
-            earnings_block.get("data", {})
-            if isinstance(earnings_block, dict)
+        announcements_block = (
+            fundamental_context.get("announcements", {})
+            if isinstance(fundamental_context, dict)
             else {}
         )
-        capital_flow_data = (
-            capital_flow_block.get("data", {})
-            if isinstance(capital_flow_block, dict)
+        northbound_block = (
+            fundamental_context.get("northbound", {})
+            if isinstance(fundamental_context, dict)
             else {}
         )
-        dragon_tiger_data = (
-            dragon_tiger_block.get("data", {})
-            if isinstance(dragon_tiger_block, dict)
+        margin_block = (
+            fundamental_context.get("margin", {})
+            if isinstance(fundamental_context, dict)
             else {}
         )
-        boards_data = (
-            boards_block.get("data", {})
-            if isinstance(boards_block, dict)
+        shareholder_count_block = (
+            fundamental_context.get("shareholder_count", {})
+            if isinstance(fundamental_context, dict)
             else {}
         )
+        valuation_data = _block_data(valuation_block)
+        growth_data = _block_data(growth_block)
+        earnings_data = _block_data(earnings_block)
+        capital_flow_data = _block_data(capital_flow_block)
+        dragon_tiger_data = _block_data(dragon_tiger_block)
+        boards_data = _block_data(boards_block)
+        announcements_data = _block_data(announcements_block)
+        northbound_data = _block_data(northbound_block)
+        margin_data = _block_data(margin_block)
+        shareholder_count_data = _block_data(shareholder_count_block)
         belong_boards = context.get("belong_boards", [])
 
         if isinstance(valuation_data, dict) or isinstance(growth_data, dict):
@@ -1278,6 +1366,59 @@ class GeminiAnalyzer:
 > 判断题材股时，请结合板块强弱，不要只根据个股均线做孤立判断。
 """
 
+        announcement_events = announcements_data.get("events", []) if isinstance(announcements_data.get("events"), list) else []
+        if announcement_events:
+            event_lines = "\n".join(
+                f"- {item.get('date', '日期未知')} | {item.get('category', 'unknown')} | {item.get('title', 'N/A')}"
+                for item in announcement_events[:5]
+                if isinstance(item, dict)
+            ) or "- 暂无可用事件"
+            prompt += f"""
+### 结构化公告 / 公司事件
+{event_lines}
+
+> 这些是公司级直接证据。若事件方向不明，请写“证据不足”，不要仅凭标题脑补利好或利空。
+"""
+        else:
+            prompt += f"""
+### 结构化公告 / 公司事件
+{_block_evidence_line("公告事件", announcements_block)}
+"""
+
+        northbound_line = (
+            f"- 北向方向：{northbound_data.get('net_buy_direction', 'N/A')} | 5日增持估计：{northbound_data.get('change_shares_5d', 'N/A')} 股 | 占流通股比：{northbound_data.get('holding_ratio_float', 'N/A')}"
+            if northbound_data
+            else _block_evidence_line("北向持仓", northbound_block)
+        )
+        margin_line = (
+            f"- 融资融券：方向={margin_data.get('direction', 'N/A')} | 融资余额={margin_data.get('financing_balance', 'N/A')} | 余额变化={margin_data.get('balance_change_pct', 'N/A')}%"
+            if margin_data
+            else _block_evidence_line("融资融券", margin_block)
+        )
+        shareholder_line = (
+            f"- 股东户数：{shareholder_count_data.get('current_holder_count', 'N/A')} | 变化={shareholder_count_data.get('delta_pct', 'N/A')}% | 筹码趋势={shareholder_count_data.get('trend', 'N/A')}"
+            if shareholder_count_data
+            else _block_evidence_line("股东户数", shareholder_count_block)
+        )
+        prompt += f"""
+### 增量资金 / 杠杆 / 筹码分散度
+{northbound_line}
+{margin_line}
+{shareholder_line}
+
+> 若北向、融资、股东户数任一块缺失，请在结论中明确写“证据不足”，禁止自行推断资金回流或筹码集中。
+"""
+
+        prompt += f"""
+### 结构化证据覆盖
+{_block_evidence_line("公告事件", announcements_block)}
+{_block_evidence_line("北向持仓", northbound_block)}
+{_block_evidence_line("融资融券", margin_block)}
+{_block_evidence_line("股东户数", shareholder_count_block)}
+
+> 最终判断必须优先引用上面的结构化证据，再引用新闻摘要。
+"""
+
         # 添加财报与分红（价值投资口径）
         financial_report = (
             earnings_data.get("financial_report", {})
@@ -1325,6 +1466,13 @@ class GeminiAnalyzer:
 | 90%筹码集中度 | {chip.get('concentration_90', 0):.2%} | <15%为集中 |
 | 70%筹码集中度 | {chip.get('concentration_70', 0):.2%} | |
 | 筹码状态 | {chip.get('chip_status', '未知')} | |
+"""
+        else:
+            prompt += """
+### 筹码分布数据（效率指标）
+- 筹码分布：数据缺失/抓取失败
+
+> 若筹码数据缺失，请在报告里直接写“数据缺失”，不要输出 0.0、0% 或伪装成中性结论。
 """
         
         # 添加趋势分析结果（基于交易理念的预判）
@@ -1459,8 +1607,8 @@ class GeminiAnalyzer:
 3. ❓ 量能是否配合（缩量回调/放量突破）？
 4. ❓ 筹码结构是否健康？
 5. ❓ 消息面有无重大利空？（减持、处罚、业绩变脸等）
-6. ❓ 这只票更像普通趋势股、题材动量股、事件驱动股还是 ST 风险股？
-7. ❓ 资金流、龙虎榜、所属板块是否支持当前判断？
+6. ❓ 这只票属于哪一类：`trend` / `sector_momentum` / `event_driven` / `turnaround_loss` / `st_high_risk`？
+7. ❓ 资金流、龙虎榜、所属板块、北向、融资、股东户数是否支持当前判断？
 
 ### 决策仪表盘要求：
 - **股票名称**：必须输出正确的中文全称（如"贵州茅台"而非"股票600519"）
@@ -1469,8 +1617,9 @@ class GeminiAnalyzer:
 - **具体狙击点位**：买入价、止损价、目标价（精确到分）
 - **检查清单**：每项用 ✅/⚠️/❌ 标记
 - **消息面时间合规**：`latest_news`、`risk_alerts`、`positive_catalysts` 不得包含超出近{news_window_days}日或时间未知的信息
-- **A股风格适配**：普通趋势股严格执行 5% 乖离率；题材动量股只有在热点板块、资金承接、龙虎榜活跃共振时才可有限放宽，并必须提示轻仓和止损
-- **证据优先级**：优先使用结构化数据（资金流、龙虎榜、板块、财报），再使用新闻摘要；若证据不足请明确说明
+- **A股风格适配**：`trend` 严格执行 5% 乖离率；`sector_momentum` 只有在热点板块、资金承接、龙虎榜活跃共振时才可有限放宽，并必须提示轻仓和止损；`turnaround_loss` 与 `st_high_risk` 默认高风险
+- **证据优先级**：优先使用结构化数据（公告事件、北向、融资、股东户数、资金流、龙虎榜、板块、财报），再使用新闻摘要；若证据不足请明确说明
+- **缺失数据处理**：凡是公告事件、北向、融资、股东户数、筹码任一块缺失，都必须在对应位置写“数据缺失”或“证据不足”，禁止脑补
 
 请输出完整的 JSON 格式决策仪表盘。"""
         
@@ -1518,9 +1667,9 @@ class GeminiAnalyzer:
 
     def _build_market_snapshot(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """构建当日行情快照（展示用）"""
-        today = context.get('today', {}) or {}
+        today = context.get('daily_today_snapshot') or context.get('today', {}) or {}
         realtime = context.get('realtime', {}) or {}
-        yesterday = context.get('yesterday', {}) or {}
+        yesterday = context.get('daily_yesterday_snapshot') or context.get('yesterday', {}) or {}
 
         prev_close = yesterday.get('close')
         close = today.get('close')
@@ -1529,6 +1678,7 @@ class GeminiAnalyzer:
 
         amplitude = None
         change_amount = None
+        pct_chg = None
         if prev_close not in (None, 0) and high is not None and low is not None:
             try:
                 amplitude = (float(high) - float(low)) / float(prev_close) * 100
@@ -1537,8 +1687,18 @@ class GeminiAnalyzer:
         if prev_close is not None and close is not None:
             try:
                 change_amount = float(close) - float(prev_close)
+                if float(prev_close) != 0:
+                    pct_chg = change_amount / float(prev_close) * 100
             except (TypeError, ValueError):
                 change_amount = None
+                pct_chg = None
+
+        if pct_chg is None:
+            raw_pct_chg = today.get('pct_chg')
+            try:
+                pct_chg = float(raw_pct_chg) if raw_pct_chg is not None else None
+            except (TypeError, ValueError):
+                pct_chg = None
 
         snapshot = {
             "date": context.get('date', '未知'),
@@ -1547,7 +1707,7 @@ class GeminiAnalyzer:
             "high": self._format_price(high),
             "low": self._format_price(low),
             "prev_close": self._format_price(prev_close),
-            "pct_chg": self._format_percent(today.get('pct_chg')),
+            "pct_chg": self._format_percent(pct_chg),
             "change_amount": self._format_price(change_amount),
             "amplitude": self._format_percent(amplitude),
             "volume": self._format_volume(today.get('volume')),

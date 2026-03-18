@@ -84,6 +84,34 @@ def _handle_get_sector_rankings(top_n: int = 10) -> dict:
         return {"data": str(result)}
 
 
+def _handle_get_market_breadth(region: str = "cn") -> dict:
+    """Get market breadth / market-statistics summary."""
+    normalized_region = (region or "cn").strip().lower()
+    if normalized_region != "cn":
+        return {
+            "status": "not_supported",
+            "region": normalized_region,
+            "error": f"market breadth is only supported for region 'cn', got '{normalized_region}'",
+        }
+
+    manager = _get_fetcher_manager()
+    stats = manager.get_market_stats()
+    if not stats:
+        return {"status": "failed", "region": normalized_region, "error": "No market breadth data available"}
+
+    return {
+        "status": "ok",
+        "region": normalized_region,
+        "breadth": stats,
+        "up_count": stats.get("up_count"),
+        "down_count": stats.get("down_count"),
+        "flat_count": stats.get("flat_count"),
+        "limit_up_count": stats.get("limit_up_count"),
+        "limit_down_count": stats.get("limit_down_count"),
+        "total_amount": stats.get("total_amount"),
+    }
+
+
 get_sector_rankings_tool = ToolDefinition(
     name="get_sector_rankings",
     description="Get sector/industry performance rankings. Returns top N and bottom N "
@@ -102,7 +130,27 @@ get_sector_rankings_tool = ToolDefinition(
 )
 
 
+get_market_breadth_tool = ToolDefinition(
+    name="get_market_breadth",
+    description="Get China A-share market breadth statistics: advancers, decliners, limit-up/down count, "
+                "and total turnover. Useful for emotion-cycle and sector-rotation checks.",
+    parameters=[
+        ToolParameter(
+            name="region",
+            type="string",
+            description="Market region. Only 'cn' is currently supported.",
+            required=False,
+            default="cn",
+            enum=["cn"],
+        ),
+    ],
+    handler=_handle_get_market_breadth,
+    category="market",
+)
+
+
 ALL_MARKET_TOOLS = [
     get_market_indices_tool,
     get_sector_rankings_tool,
+    get_market_breadth_tool,
 ]

@@ -1,0 +1,40 @@
+# Event Driven Strategy / 事件驱动
+# Prioritises verifiable company events over generic trend templates.
+
+name: event_driven
+display_name: 事件驱动
+description: 基于公告、业绩预告、订单合同、监管事项等可验证事件判断交易机会。
+category: event
+core_rules: [2, 5, 7]
+required_tools:
+  - get_stock_event_context
+  - get_a_share_flow_context
+  - search_stock_news
+
+instructions: |
+  **事件驱动策略（Event Driven Strategy）**
+
+  核心逻辑：先确认“有没有真事件”，再判断“事件有没有资金承接”。
+
+  1. **先看公司级事件**
+     - 使用 `get_stock_event_context`。
+     - 重点检查近 7 日是否存在：业绩预告、合同订单、股东变化、质押、监管、解禁。
+     - 没有可验证事件时，不得硬套“事件驱动”标签。
+
+  2. **再看资金是否认可**
+     - 使用 `get_a_share_flow_context`。
+     - 事件落地后，若主力净流入、北向增持、融资余额改善、龙虎榜活跃同时出现，事件级别上调。
+     - 如果只有公告没有资金承接，结论偏中性。
+
+  3. **最后用新闻补全**
+     - 使用 `search_stock_news` 补最近市场反馈。
+     - 只允许引用和个股本身直接相关的新闻，不能用泛行业文章替代事件证据。
+
+  4. **交易要求**
+     - 利好事件但次日大幅高开、乖离过大，不追高。
+     - 事件驱动更重视兑现节奏，必须给出止损与失效条件。
+
+  评分调整建议：
+  - 真事件 + 资金承接：`sentiment_score +15`
+  - 真事件但无资金承接：`sentiment_score +5`
+  - 利空事件 + 资金流出：`sentiment_score -15`

@@ -178,7 +178,7 @@
 | `NEWS_MAX_AGE_DAYS` | 新闻最大时效上限（天），默认 7；实际窗口 `effective_days = min(profile_days, NEWS_MAX_AGE_DAYS)`，例如 `ultra_short(1)` + `7` 仍为 `1` 天 | 可选 |
 | `BIAS_THRESHOLD` | 乖离率阈值（%），默认 5.0，超过提示不追高；强势趋势股自动放宽 | 可选 |
 | `AGENT_MODE` | 开启 Agent 策略问股模式（`true`/`false`，默认 false） | 可选 |
-| `AGENT_SKILLS` | 激活的策略（逗号分隔），`all` 启用全部 11 个；不配置时默认 4 个，详见 `.env.example` | 可选 |
+| `AGENT_SKILLS` | 激活的策略（逗号分隔），`all` 启用全部 14 个；不配置时默认 4 个，详见 `.env.example` | 可选 |
 | `AGENT_MAX_STEPS` | Agent 最大推理步数（默认 10） | 可选 |
 | `AGENT_STRATEGY_DIR` | 自定义策略目录（默认内置 `strategies/`） | 可选 |
 | `TRADING_DAY_CHECK_ENABLED` | 交易日检查（默认 `true`）：非交易日跳过执行；设为 `false` 或使用 `--force-run` 强制执行 | 可选 |
@@ -198,11 +198,15 @@
 >   - `fundamental_context.boards.data` = `sector_rankings`（板块涨跌榜，结构 `{top, bottom}`）；
 >   - `fundamental_context.earnings.data.financial_report` = 财报摘要（报告期、营收、归母净利润、经营现金流、ROE）；
 >   - `fundamental_context.earnings.data.dividend` = 分红指标（仅现金分红税前口径，含 `events`、`ttm_cash_dividend_per_share`、`ttm_dividend_yield_pct`）；
+>   - `fundamental_context.announcements.data.events` = 近 3-5 条公司级公告事件（业绩、股东变化、质押、监管、合同订单、解禁）；
+>   - `fundamental_context.northbound.data` = 北向持仓变化（适用于沪股通/深股通标的）；
+>   - `fundamental_context.margin.data` = 融资融券余额与方向；
+>   - `fundamental_context.shareholder_count.data` = 最新股东户数变化与“筹码趋集/趋散”判断；
 >   - `get_stock_info.belong_boards` = 个股所属板块列表；
 >   - `get_stock_info.boards` 为兼容别名，值与 `belong_boards` 相同（未来仅在大版本考虑移除）；
 >   - `get_stock_info.sector_rankings` 与 `fundamental_context.boards.data` 保持一致。
 > - 板块涨跌榜采用固定回退顺序：`AkShare(EM->Sina) -> Tushare -> efinance`。
-> - A 股主分析 Prompt 现在会联合使用 `belong_boards`、`capital_flow`、`dragon_tiger`、MACD、RSI 等上下文；新闻链路会额外剔除行情页、报价页以及明显不属于当前股票主体的噪音结果。
+> - A 股主分析 Prompt 现在会联合使用 `belong_boards`、`capital_flow`、`dragon_tiger`、`announcements`、`northbound`、`margin`、`shareholder_count`、MACD、RSI 等上下文；新闻链路会额外剔除行情页、报价页以及明显不属于当前股票主体的噪音结果，并对 A 股场景下日期缺失严重的来源做降权处理。
 
 #### 3. 启用 Actions
 

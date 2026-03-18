@@ -1,0 +1,38 @@
+# Capital Flow Resonance Strategy / 资金共振
+# Requires multi-source capital confirmation before aggressive positioning.
+
+name: capital_flow_resonance
+display_name: 资金共振
+description: 结合主力资金、北向、融资融券、龙虎榜和板块强弱判断资金是否形成共振。
+category: flow
+core_rules: [2, 3, 5, 7]
+required_tools:
+  - get_a_share_flow_context
+  - get_stock_info
+  - get_realtime_quote
+
+instructions: |
+  **资金共振策略（Capital Flow Resonance）**
+
+  核心逻辑：A 股很多行情不是“估值先行”，而是“资金先行”。只有多路资金共振，持续性才更高。
+
+  1. **个股资金**
+     - 使用 `get_a_share_flow_context` 检查主力净流入、5日/10日资金变化。
+     - 主力净流入持续为正，才可提高胜率。
+
+  2. **外部资金**
+     - 看北向资金是否增持、融资余额是否改善。
+     - 北向与融资方向一致时，说明买盘更稳。
+
+  3. **情绪资金**
+     - 看龙虎榜是否活跃、换手率是否足够。
+     - 龙虎榜频繁但主力流出，往往只是短线博弈，不宜重仓。
+
+  4. **板块共振**
+     - 看所属板块是否处于领涨或资金流入前列。
+     - 个股上涨若脱离板块环境，持续性要打折。
+
+  评分调整建议：
+  - 主力净流入 + 北向增持 + 融资改善：`sentiment_score +12`
+  - 板块同步走强：额外 `+6`
+  - 龙虎榜过热但无中线资金承接：`sentiment_score -8`

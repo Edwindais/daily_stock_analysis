@@ -35,7 +35,10 @@ from .base import BaseFetcher, DataFetchError, RateLimitError, STANDARD_COLUMNS,
 from .realtime_types import UnifiedRealtimeQuote, ChipDistribution
 from src.config import get_config
 import os
-from zoneinfo import ZoneInfo
+try:
+    from zoneinfo import ZoneInfo
+except ModuleNotFoundError:  # pragma: no cover - Python < 3.9 fallback
+    from backports.zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 

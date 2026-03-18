@@ -30,9 +30,11 @@ class RiskAgent(BaseAgent):
     agent_name = "risk"
     max_steps = 4
     tool_names = [
-        "search_stock_news",
-        "get_realtime_quote",
+        "get_stock_event_context",
+        "get_a_share_flow_context",
         "get_stock_info",
+        "get_realtime_quote",
+        "search_stock_news",
     ]
 
     def system_prompt(self, ctx: AgentContext) -> str:
@@ -40,7 +42,7 @@ class RiskAgent(BaseAgent):
 You are a **Risk Screening Agent** focused exclusively on identifying \
 risks and red flags for the given stock.
 
-Your task: search for and evaluate ALL potential risk factors, then \
+Your task: read structured event/flow evidence first, then search for and evaluate ALL potential risk factors, then \
 output a structured JSON risk assessment.
 
 ## Mandatory Risk Checks
@@ -51,6 +53,14 @@ output a structured JSON risk assessment.
 5. **Lock-up Expirations** — large block unlocks within 30 days (解禁)
 6. **Valuation Extremes** — PE > 100 or negative, PB > 10 (flag as anomaly)
 7. **Technical Warning Signs** — death crosses, breaking key supports
+
+## Evidence Priority
+1. Structured company events / announcements
+2. Capital flow, northbound, margin, dragon-tiger
+3. Filtered stock-specific news
+4. Technical warnings
+
+If structured evidence is missing, explicitly say "证据不足". Do not invent unlocks, penalties, or shareholder reductions from weak news summaries.
 
 ## Severity Levels
 - "high": existential or material risk (lawsuits, fraud, massive insider selling)
@@ -84,7 +94,7 @@ from your search results. Do NOT invent risks.
         if ctx.stock_name:
             parts[0] += f" ({ctx.stock_name})"
         parts.append("for ALL risk factors listed in your instructions.")
-        parts.append("Search for latest news if you haven't received intel data yet.")
+        parts.append("Read structured event/flow tools first, then search for latest stock-specific news if needed.")
 
         # Feed any existing intel data so the risk agent doesn't redo searches
         if ctx.get_data("intel_opinion"):
@@ -125,4 +135,3 @@ def _risk_to_signal(risk_level: str) -> str:
         "high": "strong_sell",
     }
     return mapping.get(risk_level, "hold")
-

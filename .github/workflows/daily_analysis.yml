@@ -84,6 +84,7 @@ jobs:
           # Anthropic / Claude
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL || secrets.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022' }}
+          LLM_TEMPERATURE: ${{ vars.LLM_TEMPERATURE || secrets.LLM_TEMPERATURE }}
 
           # ==========================================
           # 数据源
@@ -164,6 +165,11 @@ jobs:
           MARKET_REVIEW_ENABLED: ${{ vars.MARKET_REVIEW_ENABLED || secrets.MARKET_REVIEW_ENABLED || 'true' }}
           ANALYSIS_DELAY: ${{ vars.ANALYSIS_DELAY || secrets.ANALYSIS_DELAY || '0' }}
           TRADING_DAY_CHECK_ENABLED: ${{ vars.TRADING_DAY_CHECK_ENABLED || secrets.TRADING_DAY_CHECK_ENABLED || 'true' }}
+          AGENT_MODE: ${{ vars.AGENT_MODE || secrets.AGENT_MODE || 'false' }}
+          AGENT_ARCH: ${{ vars.AGENT_ARCH || secrets.AGENT_ARCH || 'single' }}
+          AGENT_SKILLS: ${{ vars.AGENT_SKILLS || secrets.AGENT_SKILLS }}
+          AGENT_STRATEGY_ROUTING: ${{ vars.AGENT_STRATEGY_ROUTING || secrets.AGENT_STRATEGY_ROUTING || 'auto' }}
+          AGENT_ORCHESTRATOR_MODE: ${{ vars.AGENT_ORCHESTRATOR_MODE || secrets.AGENT_ORCHESTRATOR_MODE || 'standard' }}
           
           # ==========================================
           # 系统配置
@@ -205,9 +211,17 @@ jobs:
           echo "【AI 配置】"
           echo "  LiteLLM: $([ -n "$LITELLM_CONFIG" ] || [ -n "$LITELLM_API_KEY" ] || [ -n "$LITELLM_MODEL" ] && echo '✅ 已配置' || echo '❌ 未配置')"
           echo "  Gemini API Key: $([ -n "$GEMINI_API_KEY" ] && echo '✅ 已配置' || echo '❌ 未配置')"
+          echo "  LLM Temperature: ${LLM_TEMPERATURE:-'(auto)'}"
           echo "  AIHubMix Key:   $([ -n "$AIHUBMIX_KEY" ] && echo '✅ 已配置' || echo '⚪ 未配置')"
           echo "  OpenAI API Key: $([ -n "$OPENAI_API_KEY" ] && echo '✅ 已配置' || echo '⚪ 未配置')"
           echo "  Anthropic Key:  $([ -n "$ANTHROPIC_API_KEY" ] && echo '✅ 已配置' || echo '⚪ 未配置')"
+          echo ""
+          echo "【Agent 配置】"
+          echo "  AGENT_MODE: ${AGENT_MODE:-false}"
+          echo "  AGENT_ARCH: ${AGENT_ARCH:-single}"
+          echo "  AGENT_ORCHESTRATOR_MODE: ${AGENT_ORCHESTRATOR_MODE:-standard}"
+          echo "  AGENT_STRATEGY_ROUTING: ${AGENT_STRATEGY_ROUTING:-auto}"
+          echo "  AGENT_SKILLS: ${AGENT_SKILLS:-'(default)'}"
           echo ""
           echo "【搜索引擎】"
           echo "  Bocha API Keys: $([ -n "$BOCHA_API_KEYS" ] && echo '✅ 已配置' || echo '⚪ 未配置')"
