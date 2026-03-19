@@ -347,7 +347,15 @@ def run_agent_loop(
             progress_callback({"type": "thinking", "step": step + 1, "message": thinking_msg})
 
         # --- LLM call ---
-        response = llm_adapter.call_with_tools(messages, tool_decls)
+        response = llm_adapter.call_with_tools(
+            messages,
+            tool_decls,
+            prompt_trace_meta={
+                "prompt_kind": "agent_step",
+                "phase": "tool_loop",
+                "step": step + 1,
+            },
+        )
         provider_used = response.provider
         total_tokens += (response.usage or {}).get("total_tokens", 0)
         m = getattr(response, "model", "") or response.provider

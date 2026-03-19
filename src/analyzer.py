@@ -32,6 +32,7 @@ from src.config import (
 )
 from src.storage import persist_llm_usage
 from src.data.stock_mapping import STOCK_NAME_MAP
+from src.prompt_audit import write_prompt_snapshot
 from src.schemas.report_schema import AnalysisReportSchema
 
 logger = logging.getLogger(__name__)
@@ -381,6 +382,8 @@ class AnalysisResult:
     operation_advice: str  # 操作建议：买入/加仓/持有/减仓/卖出/观望
     decision_type: str = "hold"  # 决策类型：buy/hold/sell（用于统计）
     confidence_level: str = "中"  # 置信度：高/中/低
+    confidence_score: int = 60  # 置信度评分 0-100
+    confidence_reason: str = ""  # 置信度解释
 
     # ========== 决策仪表盘 (新增) ==========
     dashboard: Optional[Dict[str, Any]] = None  # 完整的决策仪表盘数据
@@ -440,6 +443,8 @@ class AnalysisResult:
             'operation_advice': self.operation_advice,
             'decision_type': self.decision_type,
             'confidence_level': self.confidence_level,
+            'confidence_score': self.confidence_score,
+            'confidence_reason': self.confidence_reason,
             'dashboard': self.dashboard,  # 决策仪表盘数据
             'trend_analysis': self.trend_analysis,
             'short_term_outlook': self.short_term_outlook,
@@ -852,7 +857,12 @@ class GeminiAnalyzer:
         """Check if LiteLLM is properly configured with at least one API key."""
         return self._router is not None or self._litellm_available
 
-    def _call_litellm(self, prompt: str, generation_config: dict) -> Tuple[str, str, Dict[str, Any]]:
+    def _call_litellm(
+        self,
+        prompt: str,
+        generation_config: dict,
+        prompt_metadata: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[str, str, Dict[str, Any]]:
         """Call LLM via litellm with fallback across configured models.
 
         When channels/YAML are configured, every model goes through the Router
@@ -885,12 +895,20 @@ class GeminiAnalyzer:
         for model in models_to_try:
             try:
                 model_short = model.split("/")[-1] if "/" in model else model
+                messages = [
+                    {"role": "system", "content": self.SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ]
+                write_prompt_snapshot(
+                    logger=logger,
+                    source="analyzer",
+                    model=model,
+                    messages=messages,
+                    metadata=prompt_metadata,
+                )
                 call_kwargs: Dict[str, Any] = {
                     "model": model,
-                    "messages": [
-                        {"role": "system", "content": self.SYSTEM_PROMPT},
-                        {"role": "user", "content": prompt},
-                    ],
+                    "messages": messages,
                     "temperature": temperature,
                     "max_tokens": max_tokens,
                 }
@@ -961,6 +979,7 @@ class GeminiAnalyzer:
                     "max_tokens": max_tokens,
                     "temperature": cfg.llm_temperature if temperature is None else temperature,
                 },
+                prompt_metadata={"prompt_kind": "market_review", "phase": "text_generation"},
             )
             if isinstance(result, tuple):
                 text, model_used, usage = result
@@ -1038,9 +1057,6 @@ class GeminiAnalyzer:
             logger.info(f"[LLM配置] Prompt 长度: {len(prompt)} 字符")
             logger.info(f"[LLM配置] 是否包含新闻: {'是' if news_context else '否'}")
 
-            # 记录完整 prompt 到日志（INFO级别记录摘要，DEBUG记录完整）
-            prompt_preview = prompt[:500] + "..." if len(prompt) > 500 else prompt
-            logger.info(f"[LLM Prompt 预览]\n{prompt_preview}")
             logger.debug(f"=== 完整 Prompt ({len(prompt)}字符) ===\n{prompt}\n=== End Prompt ===")
 
             # 设置生成配置
@@ -1058,7 +1074,17 @@ class GeminiAnalyzer:
 
             while True:
                 start_time = time.time()
-                response_text, model_used, llm_usage = self._call_litellm(current_prompt, generation_config)
+                prompt_metadata = {
+                    "prompt_kind": "stock_analysis",
+                    "stock_code": code,
+                    "phase": "integrity_retry" if retry_count > 0 else "initial",
+                    "step": retry_count + 1,
+                }
+                response_text, model_used, llm_usage = self._call_litellm(
+                    current_prompt,
+                    generation_config,
+                    prompt_metadata=prompt_metadata,
+                )
                 elapsed = time.time() - start_time
 
                 # 记录响应信息

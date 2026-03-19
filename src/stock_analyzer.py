@@ -18,7 +18,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from enum import Enum
 
 import pandas as pd
@@ -202,7 +202,13 @@ class StockTrendAnalyzer:
         """初始化分析器"""
         pass
     
-    def analyze(self, df: pd.DataFrame, code: str) -> TrendAnalysisResult:
+    def analyze(
+        self,
+        df: pd.DataFrame,
+        code: str,
+        stock_name: str = "",
+        fundamental_context: Optional[Dict[str, Any]] = None,
+    ) -> TrendAnalysisResult:
         """
         分析股票趋势
         
@@ -258,6 +264,11 @@ class StockTrendAnalyzer:
 
         # 7. 生成买入信号
         self._generate_signal(result)
+        self.apply_a_share_guardrails(
+            result,
+            stock_name=stock_name,
+            fundamental_context=fundamental_context,
+        )
 
         return result
     
@@ -729,19 +740,98 @@ class StockTrendAnalyzer:
         result.signal_reasons = reasons
         result.risk_factors = risks
 
-        # 生成买入信号（调整阈值以适应新的100分制）
+        result.buy_signal = self._resolve_buy_signal(result, score)
+
+    @staticmethod
+    def _resolve_buy_signal(result: TrendAnalysisResult, score: int) -> BuySignal:
+        """Resolve the discrete signal from the latest score + trend state."""
         if score >= 75 and result.trend_status in [TrendStatus.STRONG_BULL, TrendStatus.BULL]:
-            result.buy_signal = BuySignal.STRONG_BUY
-        elif score >= 60 and result.trend_status in [TrendStatus.STRONG_BULL, TrendStatus.BULL, TrendStatus.WEAK_BULL]:
-            result.buy_signal = BuySignal.BUY
-        elif score >= 45:
-            result.buy_signal = BuySignal.HOLD
-        elif score >= 30:
-            result.buy_signal = BuySignal.WAIT
-        elif result.trend_status in [TrendStatus.BEAR, TrendStatus.STRONG_BEAR]:
-            result.buy_signal = BuySignal.STRONG_SELL
-        else:
-            result.buy_signal = BuySignal.SELL
+            return BuySignal.STRONG_BUY
+        if score >= 60 and result.trend_status in [TrendStatus.STRONG_BULL, TrendStatus.BULL, TrendStatus.WEAK_BULL]:
+            return BuySignal.BUY
+        if score >= 45:
+            return BuySignal.HOLD
+        if score >= 30:
+            return BuySignal.WAIT
+        if result.trend_status in [TrendStatus.BEAR, TrendStatus.STRONG_BEAR]:
+            return BuySignal.STRONG_SELL
+        return BuySignal.SELL
+
+    def apply_a_share_guardrails(
+        self,
+        result: TrendAnalysisResult,
+        stock_name: str = "",
+        fundamental_context: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        Apply A-share hard guardrails after pure technical scoring.
+
+        Technical structure alone is not enough for A-shares. ST flags,
+        negative PE, persistent losses, and recent hard-risk announcements
+        should cap or downgrade an otherwise bullish signal.
+        """
+        if result is None:
+            return
+
+        stock_name_upper = (stock_name or "").strip().upper()
+        valuation = ((fundamental_context or {}).get("valuation") or {}).get("data", {})
+        earnings = ((fundamental_context or {}).get("earnings") or {}).get("data", {})
+        announcements = ((fundamental_context or {}).get("announcements") or {}).get("data", {})
+
+        penalty_reasons: List[str] = []
+        capped_score = int(result.signal_score or 0)
+
+        is_st = stock_name_upper.startswith("ST") or stock_name_upper.startswith("*ST")
+        pe_ratio = valuation.get("pe_ratio")
+        financial_report = earnings.get("financial_report", {}) if isinstance(earnings, dict) else {}
+        net_profit_parent = (
+            financial_report.get("net_profit_parent")
+            if isinstance(financial_report, dict)
+            else None
+        )
+
+        has_negative_pe = isinstance(pe_ratio, (int, float)) and pe_ratio < 0
+        has_loss = isinstance(net_profit_parent, (int, float)) and net_profit_parent < 0
+
+        major_risk_keywords = (
+            "减持", "预亏", "亏损", "立案", "处罚", "监管", "问询",
+            "警示函", "解禁", "解除限售", "质押",
+        )
+        major_risk_event = False
+        for event in announcements.get("events", []) if isinstance(announcements, dict) else []:
+            if not isinstance(event, dict):
+                continue
+            title = str(event.get("title") or "")
+            category = str(event.get("category") or "")
+            if category == "regulatory" or any(keyword in title for keyword in major_risk_keywords):
+                major_risk_event = True
+                break
+
+        if is_st:
+            capped_score = min(capped_score, 25)
+            penalty_reasons.append("ST/*ST 高风险，技术面不得单独看多")
+
+        if has_negative_pe:
+            capped_score = min(capped_score, 42)
+            penalty_reasons.append("PE 为负，属于亏损修复型高波动标的")
+
+        if has_loss:
+            capped_score = min(capped_score, 38)
+            penalty_reasons.append("最新归母净利润为负，先降级再谈趋势")
+
+        if major_risk_event:
+            capped_score = min(capped_score, 30)
+            penalty_reasons.append("近期存在重大风险事件，技术信号需降级")
+
+        if capped_score >= 60 and (has_negative_pe or has_loss):
+            capped_score = min(capped_score, 45)
+
+        if capped_score != result.signal_score:
+            result.signal_score = capped_score
+            result.buy_signal = self._resolve_buy_signal(result, capped_score)
+            for reason in penalty_reasons:
+                if reason not in result.risk_factors:
+                    result.risk_factors.append(f"⚠️ {reason}")
     
     def format_analysis(self, result: TrendAnalysisResult) -> str:
         """

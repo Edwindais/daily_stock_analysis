@@ -8,10 +8,16 @@ Tools:
 """
 
 import logging
+import time
+from typing import Any, Dict
 
 from src.agent.tools.registry import ToolParameter, ToolDefinition
 
 logger = logging.getLogger(__name__)
+
+_MARKET_BREADTH_CACHE_TTL_SECONDS = 300
+_MARKET_BREADTH_STALE_TTL_SECONDS = 3600
+_market_breadth_cache: Dict[str, Dict[str, Any]] = {}
 
 
 def _get_fetcher_manager():
@@ -94,21 +100,55 @@ def _handle_get_market_breadth(region: str = "cn") -> dict:
             "error": f"market breadth is only supported for region 'cn', got '{normalized_region}'",
         }
 
+    cache_key = normalized_region
+    now = time.time()
+    cached = _market_breadth_cache.get(cache_key)
+    if cached and (now - float(cached.get("ts", 0))) <= _MARKET_BREADTH_CACHE_TTL_SECONDS:
+        payload = dict(cached.get("payload") or {})
+        payload["cache_hit"] = True
+        payload["cache_age_seconds"] = int(now - float(cached.get("ts", 0)))
+        return payload
+
     manager = _get_fetcher_manager()
-    stats = manager.get_market_stats()
-    if not stats:
-        return {"status": "failed", "region": normalized_region, "error": "No market breadth data available"}
+    try:
+        stats = manager.get_market_stats()
+    except Exception as exc:
+        stats = None
+        fetch_error = str(exc)
+    else:
+        fetch_error = ""
+
+    if stats:
+        payload = {
+            "status": "ok",
+            "region": normalized_region,
+            "breadth": stats,
+            "up_count": stats.get("up_count"),
+            "down_count": stats.get("down_count"),
+            "flat_count": stats.get("flat_count"),
+            "limit_up_count": stats.get("limit_up_count"),
+            "limit_down_count": stats.get("limit_down_count"),
+            "total_amount": stats.get("total_amount"),
+            "cache_hit": False,
+            "cache_age_seconds": 0,
+        }
+        _market_breadth_cache[cache_key] = {"ts": now, "payload": payload}
+        return payload
+
+    if cached and (now - float(cached.get("ts", 0))) <= _MARKET_BREADTH_STALE_TTL_SECONDS:
+        payload = dict(cached.get("payload") or {})
+        payload["status"] = "stale"
+        payload["cache_hit"] = True
+        payload["stale_fallback"] = True
+        payload["cache_age_seconds"] = int(now - float(cached.get("ts", 0)))
+        payload["fallback_reason"] = fetch_error or "No market breadth data available"
+        return payload
 
     return {
-        "status": "ok",
+        "status": "failed",
         "region": normalized_region,
-        "breadth": stats,
-        "up_count": stats.get("up_count"),
-        "down_count": stats.get("down_count"),
-        "flat_count": stats.get("flat_count"),
-        "limit_up_count": stats.get("limit_up_count"),
-        "limit_down_count": stats.get("limit_down_count"),
-        "total_amount": stats.get("total_amount"),
+        "error": fetch_error or "No market breadth data available",
+        "cache_hit": False,
     }
 
 

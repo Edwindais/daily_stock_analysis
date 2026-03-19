@@ -16,6 +16,7 @@ import litellm
 from litellm import Router
 
 from src.config import get_config, get_api_keys_for_model, extra_litellm_params, get_configured_llm_models
+from src.prompt_audit import write_prompt_snapshot
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +201,7 @@ class LLMToolAdapter:
         messages: List[Dict[str, Any]],
         tools: List[dict],
         provider: Optional[str] = None,
+        prompt_trace_meta: Optional[Dict[str, Any]] = None,
     ) -> LLMResponse:
         """Send messages + tool declarations to LLM, return normalized response.
 
@@ -212,7 +214,12 @@ class LLMToolAdapter:
         Returns:
             LLMResponse with either content (final answer) or tool_calls.
         """
-        return self.call_completion(messages, tools=tools, provider=provider)
+        return self.call_completion(
+            messages,
+            tools=tools,
+            provider=provider,
+            prompt_trace_meta=prompt_trace_meta,
+        )
 
     def call_text(
         self,
@@ -222,6 +229,7 @@ class LLMToolAdapter:
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
         timeout: Optional[float] = None,
+        prompt_trace_meta: Optional[Dict[str, Any]] = None,
     ) -> LLMResponse:
         """Send a text-only completion through the shared routing stack."""
         return self.call_completion(
@@ -231,6 +239,7 @@ class LLMToolAdapter:
             temperature=temperature,
             max_tokens=max_tokens,
             timeout=timeout,
+            prompt_trace_meta=prompt_trace_meta,
         )
 
     def call_completion(
@@ -242,6 +251,7 @@ class LLMToolAdapter:
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
         timeout: Optional[float] = None,
+        prompt_trace_meta: Optional[Dict[str, Any]] = None,
     ) -> LLMResponse:
         """Shared completion path for both tool and text-only calls."""
         config = self._config
@@ -258,6 +268,7 @@ class LLMToolAdapter:
                     temperature=temperature,
                     max_tokens=max_tokens,
                     timeout=timeout,
+                    prompt_trace_meta=prompt_trace_meta,
                 )
             except Exception as e:
                 logger.warning(f"Agent LLM call failed with {model}: {e}")
@@ -277,9 +288,17 @@ class LLMToolAdapter:
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
         timeout: Optional[float] = None,
+        prompt_trace_meta: Optional[Dict[str, Any]] = None,
     ) -> LLMResponse:
         """Call a specific litellm model with OpenAI-format messages and tools."""
         openai_messages = self._convert_messages(messages)
+        write_prompt_snapshot(
+            logger=logger,
+            source="agent_llm",
+            model=model,
+            messages=openai_messages,
+            metadata=prompt_trace_meta,
+        )
 
         # Use short model name (without provider prefix) for thinking model lookup
         model_short = model.split("/")[-1] if "/" in model else model

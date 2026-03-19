@@ -810,9 +810,17 @@ class NotificationService(
             for r in sorted_results:
                 _, signal_emoji, _ = self._get_signal_level(r)
                 display_name = self._escape_md(r.name)
+                confidence_suffix = ""
+                confidence_score = getattr(r, "confidence_score", None)
+                confidence_level = getattr(r, "confidence_level", "")
+                if confidence_level:
+                    if isinstance(confidence_score, int):
+                        confidence_suffix = f" | 置信度 {confidence_level}({confidence_score})"
+                    else:
+                        confidence_suffix = f" | 置信度 {confidence_level}"
                 report_lines.append(
                     f"{signal_emoji} **{display_name}({r.code})**: {r.operation_advice} | "
-                    f"评分 {r.sentiment_score} | {r.trend_prediction}"
+                    f"评分 {r.sentiment_score} | {r.trend_prediction}{confidence_suffix}"
                 )
             report_lines.extend([
                 "",
@@ -884,6 +892,15 @@ class NotificationService(
                     f"⏰ **时效性**: {time_sense}",
                     "",
                 ])
+                confidence_score = getattr(result, 'confidence_score', None)
+                confidence_level = getattr(result, 'confidence_level', '')
+                confidence_reason = getattr(result, 'confidence_reason', '')
+                if confidence_level:
+                    score_text = f"{confidence_score}/100" if isinstance(confidence_score, int) else "N/A"
+                    report_lines.append(f"🎯 **置信度**: {confidence_level} ({score_text})")
+                    if confidence_reason:
+                        report_lines.append(f"💡 *{confidence_reason}*")
+                    report_lines.append("")
                 # 持仓分类建议
                 if pos_advice:
                     report_lines.extend([

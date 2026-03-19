@@ -34,8 +34,9 @@ from src.analyzer import (
 )
 from src.data.stock_mapping import STOCK_NAME_MAP
 from src.notification import NotificationService, NotificationChannel
-from src.search_service import SearchService
+from src.search_service import SearchService, SearchResponse, SearchResult
 from src.services.social_sentiment_service import SocialSentimentService
+from src.utils.data_processing import normalize_model_used
 from src.enums import ReportType
 from src.stock_analyzer import StockTrendAnalyzer, TrendAnalysisResult
 from src.core.trading_calendar import get_market_for_stock, is_market_open
@@ -329,7 +330,12 @@ class StockAnalysisPipeline:
                     # Issue #234: Augment with realtime for intraday MA calculation
                     if self.config.enable_realtime_quote and realtime_quote:
                         df = self._augment_historical_with_realtime(df, realtime_quote, code)
-                    trend_result = self.trend_analyzer.analyze(df, code)
+                    trend_result = self.trend_analyzer.analyze(
+                        df,
+                        code,
+                        stock_name=stock_name,
+                        fundamental_context=fundamental_context,
+                    )
                     logger.info(f"{stock_name}({code}) 趋势分析: {trend_result.trend_status.value}, "
                               f"买入信号={trend_result.buy_signal.value}, 评分={trend_result.signal_score}")
             except Exception as e:
@@ -445,6 +451,15 @@ class StockAnalysisPipeline:
             # Step 7.7: price_position fallback
             if result:
                 fill_price_position_if_needed(result, trend_result, realtime_quote)
+                self._apply_confidence_metadata(
+                    result=result,
+                    code=code,
+                    stock_name=stock_name,
+                    trend_result=trend_result,
+                    chip_data=chip_data,
+                    fundamental_context=fundamental_context,
+                    realtime_quote=realtime_quote,
+                )
 
             # Step 8: 保存分析历史记录
             if result:
@@ -677,8 +692,16 @@ class StockAnalysisPipeline:
         try:
             from src.agent.factory import build_agent_executor
 
+            selected_skills = self._resolve_agent_skills_for_run(
+                code=code,
+                stock_name=stock_name,
+                trend_result=trend_result,
+                fundamental_context=fundamental_context,
+            )
+            logger.info("[%s] Agent strategy set: %s", code, selected_skills)
+
             # Build executor from shared factory (ToolRegistry and SkillManager prototype are cached)
-            executor = build_agent_executor(self.config, getattr(self.config, 'agent_skills', None) or None)
+            executor = build_agent_executor(self.config, selected_skills)
 
             # Build initial context to avoid redundant tool calls
             initial_context = {
@@ -740,29 +763,29 @@ class StockAnalysisPipeline:
             # price_position fallback (same as non-agent path Step 7.7)
             if result:
                 fill_price_position_if_needed(result, trend_result, realtime_quote)
+                self._apply_confidence_metadata(
+                    result=result,
+                    code=code,
+                    stock_name=stock_name,
+                    trend_result=trend_result,
+                    chip_data=chip_data,
+                    fundamental_context=fundamental_context,
+                    realtime_quote=realtime_quote,
+                )
 
             resolved_stock_name = result.name if result and result.name else stock_name
 
-            # 保存新闻情报到数据库（Agent 工具结果仅用于 LLM 上下文，未持久化，Fixes #396）
-            # 使用 search_stock_news（与 Agent 工具调用逻辑一致），仅 1 次 API 调用，无额外延迟
-            if self.search_service.is_available:
+            # 复用 Agent 已拿到的 intelligence，避免额外重复搜索。
+            if result:
                 try:
-                    news_response = self.search_service.search_stock_news(
-                        stock_code=code,
+                    saved = self._save_agent_dashboard_news(
+                        code=code,
                         stock_name=resolved_stock_name,
-                        max_results=5
+                        result=result,
+                        query_id=query_id,
                     )
-                    if news_response.success and news_response.results:
-                        query_context = self._build_query_context(query_id=query_id)
-                        self.db.save_news_intel(
-                            code=code,
-                            name=resolved_stock_name,
-                            dimension="latest_news",
-                            query=news_response.query,
-                            response=news_response,
-                            query_context=query_context
-                        )
-                        logger.info(f"[{code}] Agent 模式: 新闻情报已保存 {len(news_response.results)} 条")
+                    if saved > 0:
+                        logger.info(f"[{code}] Agent 模式: 已复用并保存 {saved} 条情报")
                 except Exception as e:
                     logger.warning(f"[{code}] Agent 模式保存新闻情报失败: {e}")
 
@@ -832,6 +855,9 @@ class StockAnalysisPipeline:
             result.decision_type = normalize_decision_signal(
                 dash.get("decision_type", "hold")
             )
+            result.confidence_level = str(dash.get("confidence_level", result.confidence_level) or result.confidence_level)
+            result.confidence_score = self._safe_int(dash.get("confidence_score"), result.confidence_score)
+            result.confidence_reason = str(dash.get("confidence_reason", "") or "")
             result.analysis_summary = dash.get("analysis_summary", "")
             # The AI returns a top-level dict that contains a nested 'dashboard' sub-key
             # with core_conclusion / battle_plan / intelligence.  AnalysisResult's helper
@@ -845,6 +871,259 @@ class StockAnalysisPipeline:
                 result.error_message = "Agent 未能生成有效的决策仪表盘"
 
         return result
+
+    def _resolve_agent_skills_for_run(
+        self,
+        code: str,
+        stock_name: str,
+        trend_result: Optional[TrendAnalysisResult],
+        fundamental_context: Optional[Dict[str, Any]],
+    ) -> List[str]:
+        """Select a compact strategy set for this run instead of blindly loading all skills."""
+        configured = [
+            skill.strip()
+            for skill in (getattr(self.config, "agent_skills", []) or [])
+            if isinstance(skill, str) and skill.strip()
+        ]
+        routing_mode = getattr(self.config, "agent_strategy_routing", "auto")
+
+        if routing_mode == "manual":
+            if configured and configured != ["all"]:
+                return configured[:5]
+            return ["bull_trend", "shrink_pullback", "event_driven", "capital_flow_resonance"]
+
+        if configured and configured != ["all"]:
+            return configured[:5]
+
+        try:
+            from src.agent.protocols import AgentContext, AgentOpinion
+            from src.agent.strategies.router import StrategyRouter
+
+            ctx = AgentContext(
+                query=f"analyze {code}",
+                stock_code=code,
+                stock_name=stock_name,
+            )
+            ctx.set_data("fundamental_context", fundamental_context or {})
+
+            if trend_result is not None:
+                ma_alignment = "neutral"
+                if trend_result.trend_status.name.endswith("BULL"):
+                    ma_alignment = "bullish"
+                elif trend_result.trend_status.name.endswith("BEAR"):
+                    ma_alignment = "bearish"
+
+                volume_status = "normal"
+                if "放量" in trend_result.volume_status.value:
+                    volume_status = "heavy"
+                elif "缩量" in trend_result.volume_status.value:
+                    volume_status = "shrink"
+
+                ctx.add_opinion(
+                    AgentOpinion(
+                        agent_name="technical",
+                        signal=str(trend_result.buy_signal.value),
+                        confidence=max(0.2, min(0.9, float(trend_result.signal_score or 50) / 100.0)),
+                        raw_data={
+                            "ma_alignment": ma_alignment,
+                            "trend_score": int(trend_result.signal_score or 50),
+                            "volume_status": volume_status,
+                        },
+                    )
+                )
+
+            selected = StrategyRouter().select_strategies(ctx, max_count=4)
+            if selected:
+                return selected
+        except Exception as exc:
+            logger.warning("[%s] Agent strategy routing failed, fallback to compact defaults: %s", code, exc)
+
+        return ["bull_trend", "shrink_pullback", "event_driven", "capital_flow_resonance"]
+
+    def _save_agent_dashboard_news(
+        self,
+        code: str,
+        stock_name: str,
+        result: AnalysisResult,
+        query_id: str,
+    ) -> int:
+        """Persist synthetic news intel from the Agent dashboard without re-querying external search APIs."""
+        dashboard = result.dashboard or {}
+        intelligence = dashboard.get("intelligence", {}) if isinstance(dashboard, dict) else {}
+        if not isinstance(intelligence, dict):
+            return 0
+
+        published_date = date.today().isoformat()
+        entries: List[SearchResult] = []
+
+        latest_news = str(intelligence.get("latest_news") or "").strip()
+        if latest_news:
+            snippet_parts: List[str] = []
+            sentiment_summary = str(intelligence.get("sentiment_summary") or "").strip()
+            if sentiment_summary:
+                snippet_parts.append(sentiment_summary)
+            for item in intelligence.get("positive_catalysts", [])[:2]:
+                text = str(item or "").strip()
+                if text:
+                    snippet_parts.append(f"利好: {text}")
+            for item in intelligence.get("risk_alerts", [])[:2]:
+                text = str(item or "").strip()
+                if text:
+                    snippet_parts.append(f"风险: {text}")
+            entries.append(
+                SearchResult(
+                    title=latest_news[:120],
+                    snippet=" | ".join(snippet_parts)[:300],
+                    url="",
+                    source="agent_dashboard",
+                    published_date=published_date,
+                )
+            )
+
+        if not entries:
+            return 0
+
+        response = SearchResponse(
+            query=f"{stock_name} {code} agent_dashboard_intel",
+            results=entries,
+            provider="agent_dashboard",
+            success=True,
+            search_time=0.0,
+        )
+        query_context = self._build_query_context(query_id=query_id)
+        return self.db.save_news_intel(
+            code=code,
+            name=stock_name,
+            dimension="latest_news",
+            query=response.query,
+            response=response,
+            query_context=query_context,
+        )
+
+    def _apply_confidence_metadata(
+        self,
+        result: AnalysisResult,
+        code: str,
+        stock_name: str,
+        trend_result: Optional[TrendAnalysisResult],
+        chip_data: Optional[ChipDistribution],
+        fundamental_context: Optional[Dict[str, Any]],
+        realtime_quote: Any,
+    ) -> None:
+        """Compute a data-completeness-driven confidence score and explanation."""
+        if result is None:
+            return
+
+        score = 78 if result.success else 25
+        reasons: List[str] = []
+        positives: List[str] = []
+
+        if realtime_quote is None:
+            score -= 8
+            reasons.append("缺少实时行情")
+        else:
+            positives.append("实时行情正常")
+
+        if trend_result is None:
+            score -= 12
+            reasons.append("缺少趋势分析")
+        else:
+            positives.append("技术面完整")
+
+        if chip_data is None:
+            score -= 10
+            reasons.append("筹码数据缺失")
+        else:
+            positives.append("筹码已获取")
+
+        market = get_market_for_stock(code)
+        if market == "cn":
+            if not isinstance(fundamental_context, dict):
+                score -= 18
+                reasons.append("结构化基本面缺失")
+            else:
+                overall_status = str(fundamental_context.get("status") or "").lower()
+                if overall_status == "failed":
+                    score -= 18
+                    reasons.append("结构化基本面抓取失败")
+                elif overall_status == "partial":
+                    score -= 10
+                    reasons.append("结构化基本面不完整")
+                elif overall_status == "ok":
+                    positives.append("结构化基本面较完整")
+
+                for block_name, label in (
+                    ("announcements", "公告事件"),
+                    ("margin", "融资融券"),
+                    ("shareholder_count", "股东户数"),
+                ):
+                    block = fundamental_context.get(block_name) if isinstance(fundamental_context, dict) else None
+                    block_status = str((block or {}).get("status") or "").lower()
+                    if block_status in {"failed", "not_supported"}:
+                        score -= 5
+                        reasons.append(f"{label}缺失")
+                    elif block_status == "partial":
+                        score -= 3
+                        reasons.append(f"{label}不完整")
+                    elif block_status == "ok":
+                        positives.append(f"{label}可用")
+
+                northbound_block = fundamental_context.get("northbound") if isinstance(fundamental_context, dict) else None
+                northbound_status = str((northbound_block or {}).get("status") or "").lower()
+                if northbound_status == "failed":
+                    score -= 4
+                    reasons.append("北向资金缺失")
+                elif northbound_status == "ok":
+                    positives.append("北向资金可用")
+
+        intelligence = {}
+        if isinstance(result.dashboard, dict):
+            intelligence = result.dashboard.get("intelligence", {}) or {}
+
+        latest_news = str(intelligence.get("latest_news") or "").strip() if isinstance(intelligence, dict) else ""
+        if latest_news:
+            positives.append("个股情报已补充")
+        else:
+            score -= 4
+            reasons.append("个股情报较少")
+
+        model_used = normalize_model_used(getattr(result, "model_used", "") or "")
+        if "," in model_used or "2.5-flash" in model_used:
+            score -= 6
+            reasons.append("模型发生回退/切换")
+
+        upper_name = (stock_name or "").upper()
+        pe_ratio = (((fundamental_context or {}).get("valuation") or {}).get("data") or {}).get("pe_ratio")
+        financial_report = ((((fundamental_context or {}).get("earnings") or {}).get("data") or {}).get("financial_report") or {})
+        net_profit_parent = financial_report.get("net_profit_parent") if isinstance(financial_report, dict) else None
+        if upper_name.startswith("ST") or upper_name.startswith("*ST"):
+            score -= 15
+            reasons.append("ST/*ST 风险股")
+        if isinstance(pe_ratio, (int, float)) and pe_ratio < 0:
+            score -= 10
+            reasons.append("PE 为负")
+        if isinstance(net_profit_parent, (int, float)) and net_profit_parent < 0:
+            score -= 10
+            reasons.append("持续亏损")
+
+        score = max(20, min(95, score))
+        if score >= 78:
+            level = "高"
+        elif score >= 55:
+            level = "中"
+        else:
+            level = "低"
+
+        if reasons:
+            unique_reasons = list(dict.fromkeys(reasons))
+            reason_text = "置信度偏低：{}".format("、".join(unique_reasons[:4]))
+        else:
+            unique_positives = list(dict.fromkeys(positives))
+            reason_text = "置信度较高：{}".format("、".join(unique_positives[:4])) if unique_positives else "数据链路较完整"
+
+        result.confidence_score = score
+        result.confidence_level = level
+        result.confidence_reason = reason_text
 
     @staticmethod
     def _is_placeholder_stock_name(name: str, code: str) -> bool:
